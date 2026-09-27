@@ -104,7 +104,9 @@ class EvaluationResult(BaseModel):
 
     def summary(self) -> str:
         """A compact human-readable summary (one line per metric)."""
-        lines = [f"overall={_fmt(self.overall_score)} passed={self.passed} cost=${self.cost_usd:.6f}"]
+        lines = [
+            f"overall={_fmt(self.overall_score)} passed={self.passed} cost=${self.cost_usd:.6f}"
+        ]
         for m in self.metrics:
             route = m.route + (f" ({m.escalation_reason})" if m.escalated else "")
             lines.append(f"  {m.metric:<24} {m.status:<7} score={_fmt(m.score)} via {route}")

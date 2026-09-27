@@ -72,7 +72,13 @@ class SimulatedEvaluator(SemanticEvaluator):
         return f"simulated/{self.role}-demo"
 
     def describe(self) -> dict[str, Any]:
-        return {"name": self.name, "kind": self.kind, "role": self.role, "model": self.model_name, "demo": True}
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "role": self.role,
+            "model": self.model_name,
+            "demo": True,
+        }
 
     async def answer(self, rubric: Rubric) -> RawAnswers:
         state_key = json.dumps(rubric.state, sort_keys=True, default=str)
@@ -83,18 +89,30 @@ class SimulatedEvaluator(SemanticEvaluator):
             good = r.random() < self.quality
             uncertain = self.role == "jev" and r.random() < self.uncertain_rate
             if isinstance(q, BinaryQuestion):
-                p_good = r.uniform(0.38, 0.62) if uncertain else (r.uniform(0.86, 0.99) if good else r.uniform(0.02, 0.25))
+                p_good = (
+                    r.uniform(0.38, 0.62)
+                    if uncertain
+                    else (r.uniform(0.86, 0.99) if good else r.uniform(0.02, 0.25))
+                )
                 p_true = p_good if q.true_is_good else 1.0 - p_good
                 answers[q.id] = answer_binary(q, p_true, explanation=_explain(self.role))
             elif isinstance(q, ChoiceQuestion):
                 ranked = sorted(q.options, key=lambda k: q.option_scores[k], reverse=True)
-                pick = ranked[0] if good else ranked[min(len(ranked) - 1, 1 + int(r.random() * (len(ranked) - 1)))]
+                pick = (
+                    ranked[0]
+                    if good
+                    else ranked[min(len(ranked) - 1, 1 + int(r.random() * (len(ranked) - 1)))]
+                )
                 top = r.uniform(0.45, 0.65) if uncertain else r.uniform(0.85, 0.98)
                 rest = (1.0 - top) / max(1, len(ranked) - 1)
                 probs = {k: (top if k == pick else rest) for k in q.options}
                 answers[q.id] = answer_choice(
-                    q, pick, probabilities=probs, confidence=top if self.role == "jev" else None,
-                    confidence_source="provider", explanation=_explain(self.role),
+                    q,
+                    pick,
+                    probabilities=probs,
+                    confidence=top if self.role == "jev" else None,
+                    confidence_source="provider",
+                    explanation=_explain(self.role),
                 )
             else:
                 top_level = q.max_level if good else int(r.random() * q.max_level)
@@ -106,13 +124,20 @@ class SimulatedEvaluator(SemanticEvaluator):
                 probs[str(neighbour)] += spill
                 level = sum(int(k) * p for k, p in probs.items())
                 answers[q.id] = answer_score(
-                    q, level, probabilities=probs, confidence=peak if self.role == "jev" else None,
-                    confidence_source="provider", explanation=_explain(self.role),
+                    q,
+                    level,
+                    probabilities=probs,
+                    confidence=peak if self.role == "jev" else None,
+                    confidence_source="provider",
+                    explanation=_explain(self.role),
                 )
             if self.role == "llm":
                 a = answers[q.id]
                 answers[q.id] = a.model_copy(
-                    update={"confidence": r.uniform(0.8, 0.97), "confidence_source": "self_reported"}
+                    update={
+                        "confidence": r.uniform(0.8, 0.97),
+                        "confidence_source": "self_reported",
+                    }
                 )
         latency = rng.uniform(*self.latency_range)
         tokens = 120 + len(state_key) // 4
@@ -130,4 +155,6 @@ class SimulatedEvaluator(SemanticEvaluator):
 
 
 def _explain(role: str) -> str:
-    return f"Simulated {'System One' if role == 'jev' else 'LLM judge'} answer (demonstration data)."
+    return (
+        f"Simulated {'System One' if role == 'jev' else 'LLM judge'} answer (demonstration data)."
+    )

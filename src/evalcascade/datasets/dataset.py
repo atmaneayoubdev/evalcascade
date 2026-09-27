@@ -123,7 +123,11 @@ class Dataset(BaseModel):
         p.parent.mkdir(parents=True, exist_ok=True)
         with p.open("w", encoding="utf-8", newline="\n") as fh:
             for case in self.cases:
-                fh.write(json.dumps(case.model_dump(mode="json", exclude_defaults=True), ensure_ascii=False))
+                fh.write(
+                    json.dumps(
+                        case.model_dump(mode="json", exclude_defaults=True), ensure_ascii=False
+                    )
+                )
                 fh.write("\n")
         return p
 
@@ -161,7 +165,9 @@ class Dataset(BaseModel):
                 dups.append(case.id)
             seen.add(case.id)
         if dups:
-            raise DatasetError(f"duplicate case ids in {self.name}: {', '.join(sorted(set(dups))[:10])}")
+            raise DatasetError(
+                f"duplicate case ids in {self.name}: {', '.join(sorted(set(dups))[:10])}"
+            )
 
 
 def load_dataset(path: str | Path, *, name: str | None = None) -> Dataset:

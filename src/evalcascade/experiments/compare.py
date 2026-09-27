@@ -84,13 +84,18 @@ def compare_experiments(
             )
         )
     scored = [d for d in deltas if d.delta is not None]
-    regressions = sorted((d for d in scored if (d.delta or 0) < -tolerance), key=lambda d: d.delta or 0)
-    improvements = sorted((d for d in scored if (d.delta or 0) > tolerance), key=lambda d: -(d.delta or 0))
+    regressions = sorted(
+        (d for d in scored if (d.delta or 0) < -tolerance), key=lambda d: d.delta or 0
+    )
+    improvements = sorted(
+        (d for d in scored if (d.delta or 0) > tolerance), key=lambda d: -(d.delta or 0)
+    )
 
     return Comparison(
         baseline=baseline.ref,
         candidate=candidate.ref,
-        dataset_match=bool(baseline.dataset.hash) and baseline.dataset.hash == candidate.dataset.hash,
+        dataset_match=bool(baseline.dataset.hash)
+        and baseline.dataset.hash == candidate.dataset.hash,
         overall_score=Delta.of(b.overall_score, c.overall_score),
         pass_rate=Delta.of(b.pass_rate, c.pass_rate),
         cost_usd=Delta.of(b.cost_usd, c.cost_usd),

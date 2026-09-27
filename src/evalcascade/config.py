@@ -69,10 +69,13 @@ class JudgeSettings(BaseModel):
     parse_retries: int = Field(default=2, ge=0, le=5)
     extra_body: dict[str, Any] = Field(
         default_factory=dict,
-        description='Extra request fields, e.g. {"chat_template_kwargs": {"enable_thinking": false}}',
+        description="Extra request fields, e.g. "
+        '{"chat_template_kwargs": {"enable_thinking": false}}',
     )
     input_cost_per_mtok: float | None = Field(
-        default=None, ge=0, description="USD per 1M input tokens, used when the provider reports no cost."
+        default=None,
+        ge=0,
+        description="USD per 1M input tokens, used when the provider reports no cost.",
     )
     output_cost_per_mtok: float | None = Field(default=None, ge=0)
 
@@ -288,7 +291,9 @@ def _apply_env(data: dict[str, Any], env: Mapping[str, str]) -> None:
                 value = json.loads(raw)
             except json.JSONDecodeError as exc:
                 raise ConfigurationError(f"{var} must be a JSON object") from exc
-        elif kind is str and path[-1] in {"primary", "fallback"} and raw.lower() in {"none", "null"}:
+        elif (
+            kind is str and path[-1] in {"primary", "fallback"} and raw.lower() in {"none", "null"}
+        ):
             value = None
         else:
             value = raw

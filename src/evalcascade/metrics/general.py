@@ -53,7 +53,8 @@ class AnswerRelevance(Metric):
                     ),
                     levels=[
                         "Irrelevant: the response does not address the request at all.",
-                        "Tangential: it touches the topic but misses the main point of the request.",
+                        "Tangential: it touches the topic but misses the main point of the "
+                        "request.",
                         "Mostly relevant: it addresses the main request but omits a requested "
                         "part or includes substantial off-topic content.",
                         "Fully relevant: it directly and completely addresses everything asked.",

@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import random
 import time
@@ -51,7 +52,7 @@ class RetryPolicy:
     def delay(self, attempt: int, retry_after: float | None = None) -> float:
         if retry_after is not None:
             return min(self.max_delay * 4, max(0.0, retry_after))
-        backoff = min(self.max_delay, self.base_delay * (2**attempt))
+        backoff = min(self.max_delay, self.base_delay * (2.0**attempt))
         spread = backoff * self.jitter
         return max(0.0, backoff + random.uniform(-spread, spread))  # noqa: S311 - not crypto
 
@@ -128,10 +129,8 @@ class HTTPClient:
     async def aclose(self) -> None:
         client, self._client = self._client, None
         if client is not None and not client.is_closed:
-            try:
+            with contextlib.suppress(RuntimeError):  # loop already closed
                 await client.aclose()
-            except RuntimeError:  # pragma: no cover - loop already closed
-                pass
 
     # -- requests ---------------------------------------------------------------------
 

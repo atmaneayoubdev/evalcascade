@@ -63,7 +63,9 @@ class CascadeRuntime:
         self.registry = registry
         self.policy = policy
 
-    async def evaluate(self, metrics: Sequence[Metric], request: EvaluationRequest) -> EvaluationResult:
+    async def evaluate(
+        self, metrics: Sequence[Metric], request: EvaluationRequest
+    ) -> EvaluationResult:
         started = time.perf_counter()
         slots = [self._prepare(metric, request) for metric in metrics]
         pending = [s for s in slots if s.result is None]
@@ -90,7 +92,9 @@ class CascadeRuntime:
         slot = _Slot(metric=metric, policy=policy)
         missing = metric.missing_fields(request)
         if missing:
-            slot.result = _terminal(metric, "skipped", f"missing required field(s): {', '.join(missing)}")
+            slot.result = _terminal(
+                metric, "skipped", f"missing required field(s): {', '.join(missing)}"
+            )
             return slot
 
         deterministic_tried = False
@@ -144,7 +148,9 @@ class CascadeRuntime:
             name = pick(slot)
             if name:
                 groups[name].append(slot)
-        await asyncio.gather(*(self._run_group(name, group, request) for name, group in groups.items()))
+        await asyncio.gather(
+            *(self._run_group(name, group, request) for name, group in groups.items())
+        )
 
     async def _run_group(self, name: str, slots: list[_Slot], request: EvaluationRequest) -> None:
         try:
@@ -190,14 +196,12 @@ class CascadeRuntime:
             used, used_label = primary, slot.labels[0]
             message = f"fallback failed ({used_label} judgment kept): {judgments[-1].error}"
 
-        route: Route
-        if escalated and used is not primary:
-            route = "jev_to_llm"
-        else:
-            route = used_label
+        route: Route = "jev_to_llm" if escalated and used is not primary else used_label
 
-        decision_made = slot.direct_reason is None and slot.policy.fallback is not None and (
-            slot.first is not None and slot.first != slot.policy.fallback
+        decision_made = (
+            slot.direct_reason is None
+            and slot.policy.fallback is not None
+            and (slot.first is not None and slot.first != slot.policy.fallback)
         )
         common = {
             "metric": metric.key,
@@ -218,7 +222,7 @@ class CascadeRuntime:
                 status="error",
                 message=used.error or "evaluator returned no score",
                 confidence=used.confidence,
-                **common,  # type: ignore[arg-type]
+                **common,
             )
         return MetricResult(
             status="ok",
@@ -228,7 +232,7 @@ class CascadeRuntime:
             explanation=used.explanation,
             details=used.details,
             message=message,
-            **common,  # type: ignore[arg-type]
+            **common,
         )
 
 

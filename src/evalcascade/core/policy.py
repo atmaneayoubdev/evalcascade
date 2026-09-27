@@ -96,7 +96,9 @@ class EvaluationPolicy(BaseModel):
         return cls(primary=None, fallback=None, route_reasoning_to_fallback=False)
 
     @classmethod
-    def preset(cls, name: PolicyPreset | str, escalate_below: float | None = None) -> EvaluationPolicy:
+    def preset(
+        cls, name: PolicyPreset | str, escalate_below: float | None = None
+    ) -> EvaluationPolicy:
         match name:
             case "cascade":
                 return cls.cascade(0.82 if escalate_below is None else escalate_below)

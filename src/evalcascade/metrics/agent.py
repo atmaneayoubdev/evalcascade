@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import Field
-
 from evalcascade.core.metric import Aggregation, DeterministicOutcome, Metric
 from evalcascade.core.rubric import Answer, BinaryQuestion, Rubric, ScoreQuestion
 from evalcascade.core.types import AgentTrace, EvaluationRequest, ToolCall, ToolSpec
@@ -35,7 +33,10 @@ def tools_state(trace: AgentTrace, *, with_schema: bool = False) -> dict[str, An
     out: dict[str, Any] = {}
     for tool in trace.tools:
         if with_schema and tool.parameters:
-            out[tool.name] = {"description": tool.description, "parameters": compact(tool.parameters, 1500)}
+            out[tool.name] = {
+                "description": tool.description,
+                "parameters": compact(tool.parameters, 1500),
+            }
         else:
             out[tool.name] = tool.description
     return out
@@ -114,7 +115,9 @@ def validate_arguments(arguments: dict[str, Any], spec: ToolSpec | None) -> list
     return errors
 
 
-def _step(step_index: int, label: str, score: float | None, explanation: str | None = None) -> dict[str, Any]:
+def _step(
+    step_index: int, label: str, score: float | None, explanation: str | None = None
+) -> dict[str, Any]:
     return {"step_index": step_index, "label": label, "score": score, "explanation": explanation}
 
 
@@ -160,7 +163,9 @@ class ToolSelection(Metric):
         expected = request.expected.tools if request.expected else None
         if expected is None:
             if not calls and request.trace is not None and not request.trace.tools:
-                return DeterministicOutcome(score=1.0, explanation="No tools were available or used.")
+                return DeterministicOutcome(
+                    score=1.0, explanation="No tools were available or used."
+                )
             return None
         used = [c.name for _, c in calls]
         exp, got = set(expected), set(used)
@@ -171,7 +176,11 @@ class ToolSelection(Metric):
         recall = overlap / len(exp) if exp else 0.0
         f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
         steps = [
-            _step(i, "expected_tool" if c.name in exp else "unexpected_tool", 1.0 if c.name in exp else 0.0)
+            _step(
+                i,
+                "expected_tool" if c.name in exp else "unexpected_tool",
+                1.0 if c.name in exp else 0.0,
+            )
             for i, c in calls
         ]
         return DeterministicOutcome(
@@ -225,8 +234,12 @@ class ToolSelection(Metric):
     def aggregate(self, answers: dict[str, Answer], rubric: Rubric) -> Aggregation:
         base = super().aggregate(answers, rubric)
         steps = [
-            _step(idx, "appropriate" if answers[f"call_{k + 1}"].score >= 0.5 else "inappropriate",
-                  answers[f"call_{k + 1}"].score, answers[f"call_{k + 1}"].explanation)
+            _step(
+                idx,
+                "appropriate" if answers[f"call_{k + 1}"].score >= 0.5 else "inappropriate",
+                answers[f"call_{k + 1}"].score,
+                answers[f"call_{k + 1}"].explanation,
+            )
             for k, idx in enumerate(rubric.aux["steps"])
         ]
         return base.model_copy(update={"details": {"steps": steps}})
@@ -280,10 +293,18 @@ class ToolArgumentsQuality(Metric):
                 unused.remove(match)
                 actual = calls[match][1].arguments
                 keys = list(exp.arguments)
-                ok = sum(1 for k in keys if k in actual and _values_equal(actual[k], exp.arguments[k]))
+                ok = sum(
+                    1 for k in keys if k in actual and _values_equal(actual[k], exp.arguments[k])
+                )
                 score = ok / len(keys) if keys else 1.0
                 scores.append(score)
-                steps.append(_step(calls[match][0], "correct_arguments" if score == 1.0 else "wrong_arguments", score))
+                steps.append(
+                    _step(
+                        calls[match][0],
+                        "correct_arguments" if score == 1.0 else "wrong_arguments",
+                        score,
+                    )
+                )
             mean = sum(scores) / len(scores)
             return DeterministicOutcome(
                 score=mean,
@@ -297,7 +318,10 @@ class ToolArgumentsQuality(Metric):
                 explanation="Every tool call violates its tool's parameter schema.",
                 details={
                     "schema_errors": errors,
-                    "steps": [_step(i, "invalid_arguments", 0.0, "; ".join(e)) for (i, _), e in zip(calls, errors, strict=True)],
+                    "steps": [
+                        _step(i, "invalid_arguments", 0.0, "; ".join(e))
+                        for (i, _), e in zip(calls, errors, strict=True)
+                    ],
                 },
             )
         return None
@@ -308,7 +332,9 @@ class ToolArgumentsQuality(Metric):
             return None
         trace = request.trace or AgentTrace()
         errors = self._schema_errors(request)
-        judged = [(pos, i, c) for pos, ((i, c), e) in enumerate(zip(calls, errors, strict=True)) if not e][:MAX_CALLS]
+        judged = [
+            (pos, i, c) for pos, ((i, c), e) in enumerate(zip(calls, errors, strict=True)) if not e
+        ][:MAX_CALLS]
         state: dict[str, Any] = {"user_input": truncate(request.input, 4000)}
         if trace.tools:
             state["available_tools"] = tools_state(trace, with_schema=True)
@@ -324,7 +350,8 @@ class ToolArgumentsQuality(Metric):
                 levels=[
                     "Wrong: arguments are missing, malformed, or would not accomplish the step.",
                     "Partially correct: right intent, but a value is wrong, imprecise or missing.",
-                    "Correct: complete and accurately reflect the user's request and prior results.",
+                    "Correct: complete and accurately reflect the user's request and prior "
+                    "results.",
                 ],
             )
             for k in range(len(judged))
@@ -340,15 +367,22 @@ class ToolArgumentsQuality(Metric):
         judged: list[int] = rubric.aux["judged_steps"]
         invalid: list[tuple[int, list[str]]] = rubric.aux["invalid"]
         steps = [
-            _step(idx, "good_arguments" if answers[f"call_{k + 1}"].score >= 0.5 else "weak_arguments",
-                  answers[f"call_{k + 1}"].score, answers[f"call_{k + 1}"].explanation)
+            _step(
+                idx,
+                "good_arguments" if answers[f"call_{k + 1}"].score >= 0.5 else "weak_arguments",
+                answers[f"call_{k + 1}"].score,
+                answers[f"call_{k + 1}"].explanation,
+            )
             for k, idx in enumerate(judged)
         ]
         steps += [_step(i, "invalid_arguments", 0.0, "; ".join(e)) for i, e in invalid]
         scores = [s["score"] for s in steps]
         return Aggregation(
             score=sum(scores) / len(scores) if scores else 0.0,
-            details={"steps": sorted(steps, key=lambda s: s["step_index"]), "schema_errors": len(invalid)},
+            details={
+                "steps": sorted(steps, key=lambda s: s["step_index"]),
+                "schema_errors": len(invalid),
+            },
         )
 
 
@@ -450,7 +484,9 @@ class TaskSuccess(Metric):
     def check(self, request: EvaluationRequest) -> DeterministicOutcome | None:
         refs = request.expected.answers() if request.expected else []
         if refs and request.output and matches_reference(request.output, refs, "contains"):
-            return DeterministicOutcome(score=1.0, explanation="The final output contains the expected answer.")
+            return DeterministicOutcome(
+                score=1.0, explanation="The final output contains the expected answer."
+            )
         return None
 
     def rubric(self, request: EvaluationRequest) -> Rubric:
@@ -511,8 +547,15 @@ class UnnecessaryToolCalls(Metric):
         if expected is not None:
             unnecessary |= {pos for pos, (_, c) in enumerate(calls) if c.name not in expected}
         steps = [
-            _step(i, "duplicate" if pos in dups else "unnecessary" if pos in unnecessary else "necessary",
-                  0.0 if pos in unnecessary else 1.0)
+            _step(
+                i,
+                "duplicate"
+                if pos in dups
+                else "unnecessary"
+                if pos in unnecessary
+                else "necessary",
+                0.0 if pos in unnecessary else 1.0,
+            )
             for pos, (i, _) in enumerate(calls)
         ]
         score = 1.0 - len(unnecessary) / len(calls)
@@ -544,15 +587,22 @@ class UnnecessaryToolCalls(Metric):
         return Rubric(
             questions=questions,
             state=state,
-            aux={"judged_steps": [i for _, i, _ in judged], "duplicate_steps": [calls[p][0] for p in sorted(dups)]},
+            aux={
+                "judged_steps": [i for _, i, _ in judged],
+                "duplicate_steps": [calls[p][0] for p in sorted(dups)],
+            },
         )
 
     def aggregate(self, answers: dict[str, Answer], rubric: Rubric) -> Aggregation:
         judged: list[int] = rubric.aux["judged_steps"]
         duplicates: list[int] = rubric.aux["duplicate_steps"]
         steps = [
-            _step(idx, "necessary" if answers[f"call_{k + 1}"].score >= 0.5 else "unnecessary",
-                  answers[f"call_{k + 1}"].score, answers[f"call_{k + 1}"].explanation)
+            _step(
+                idx,
+                "necessary" if answers[f"call_{k + 1}"].score >= 0.5 else "unnecessary",
+                answers[f"call_{k + 1}"].score,
+                answers[f"call_{k + 1}"].explanation,
+            )
             for k, idx in enumerate(judged)
         ]
         steps += [_step(i, "duplicate", 0.0, "Identical to an earlier call.") for i in duplicates]
@@ -560,5 +610,8 @@ class UnnecessaryToolCalls(Metric):
         necessary = sum(answers[f"call_{k + 1}"].score for k in range(len(judged)))
         return Aggregation(
             score=necessary / total if total else 1.0,
-            details={"steps": sorted(steps, key=lambda s: s["step_index"]), "duplicates": len(duplicates)},
+            details={
+                "steps": sorted(steps, key=lambda s: s["step_index"]),
+                "duplicates": len(duplicates),
+            },
         )

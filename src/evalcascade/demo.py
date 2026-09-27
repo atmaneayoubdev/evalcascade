@@ -39,10 +39,15 @@ def seed_demo(store: ExperimentStore, *, replace: bool = True) -> list[Experimen
     for name, sample, suite_names, quality, seed, days_ago in DEMO_RUNS:
         evaluators = {
             "jev": SimulatedEvaluator("jev", role="jev", seed=seed, quality=quality),
-            "llm": SimulatedEvaluator("llm", role="llm", seed=seed, quality=min(0.97, quality + 0.08)),
+            "llm": SimulatedEvaluator(
+                "llm", role="llm", seed=seed, quality=min(0.97, quality + 0.08)
+            ),
         }
         suite = EvaluationSuite(
-            build_metrics(suite_names), policy=EvaluationPolicy.cascade(), evaluators=evaluators, settings=settings
+            build_metrics(suite_names),
+            policy=EvaluationPolicy.cascade(),
+            evaluators=evaluators,
+            settings=settings,
         )
         experiment = suite.run_sync(
             load_sample(sample),

@@ -60,8 +60,16 @@ def to_decision_question(question: AnyQuestion) -> dict[str, Any]:
             "criteria": {"true": question.true, "false": question.false},
         }
     if isinstance(question, ChoiceQuestion):
-        return {"type": "choice", "instructions": question.instructions, "criteria": dict(question.options)}
-    return {"type": "score", "instructions": question.instructions, "criteria": list(question.levels)}
+        return {
+            "type": "choice",
+            "instructions": question.instructions,
+            "criteria": dict(question.options),
+        }
+    return {
+        "type": "score",
+        "instructions": question.instructions,
+        "criteria": list(question.levels),
+    }
 
 
 def parse_decision_answer(question: AnyQuestion, answer: DecisionAnswer) -> Answer:
@@ -225,7 +233,9 @@ class JevEvaluator(SemanticEvaluator):
                 i = group[0]
                 results[i] = await self.evaluate(items[i].metric, items[i].request, items[i].rubric)
                 return
-            for i, judgment in zip(group, await self._evaluate_group([items[i] for i in group]), strict=True):
+            for i, judgment in zip(
+                group, await self._evaluate_group([items[i] for i in group]), strict=True
+            ):
                 results[i] = judgment
 
         await asyncio.gather(*(run(g) for g in groups))

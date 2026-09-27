@@ -18,7 +18,7 @@ _PATTERNS: tuple[re.Pattern[str], ...] = (
     # key=value / "key": "value" pairs for common credential names
     re.compile(
         r"(?i)((?:api[_-]?key|authorization|token|secret|password)[\"']?\s*[:=]\s*[\"']?)"
-        r"[^\s\"',}]{6,}"
+        r"(?:bearer\s+)?[^\s\"',}]{6,}"
     ),
 )
 

@@ -61,7 +61,9 @@ class EvaluationSuite:
         keys = [m.key for m in metrics]
         dups = sorted({k for k in keys if keys.count(k) > 1})
         if dups:
-            raise ConfigurationError(f"duplicate metric keys {dups}; set alias= to use a metric twice")
+            raise ConfigurationError(
+                f"duplicate metric keys {dups}; set alias= to use a metric twice"
+            )
         self.metrics = list(metrics)
         self.name = name
         self.concurrency = max(1, concurrency)
@@ -193,7 +195,9 @@ class EvaluationSuite:
                     prepared = await _apply_task(task, case) if task else case
                 except Exception as exc:
                     result = CaseResult(
-                        case_id=case.id, case=case, error=redact(f"task failed: {type(exc).__name__}: {exc}")
+                        case_id=case.id,
+                        case=case,
+                        error=redact(f"task failed: {type(exc).__name__}: {exc}"),
                     )
                 else:
                     evaluated = await self.runtime.evaluate(self.metrics, prepared)
@@ -277,5 +281,7 @@ async def _apply_task(task: Task, case: Case) -> Case:
         return case
     if isinstance(produced, str):
         return case.model_copy(update={"output": produced})
-    updates = {k: v for k, v in dict(produced).items() if k in {"output", "context", "trace", "metadata"}}
+    updates = {
+        k: v for k, v in dict(produced).items() if k in {"output", "context", "trace", "metadata"}
+    }
     return Case.model_validate({**case.model_dump(), **updates})

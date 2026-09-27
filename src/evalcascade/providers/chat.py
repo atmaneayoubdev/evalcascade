@@ -112,7 +112,8 @@ class ChatCompletionsClient:
             content = "".join(p.get("text", "") for p in content if isinstance(p, dict))
         if not isinstance(content, str) or not content.strip():
             raise ResponseValidationError(
-                f"chat completion returned empty content (finish_reason={choice.get('finish_reason')})",
+                "chat completion returned empty content "
+                f"(finish_reason={choice.get('finish_reason')})",
                 provider=self.provider,
                 status_code=http.status_code,
             )
@@ -141,6 +142,8 @@ def _parse_usage(raw: Any) -> ChatUsage:
     return ChatUsage(
         prompt_tokens=int(raw.get("prompt_tokens") or 0),
         completion_tokens=int(raw.get("completion_tokens") or 0),
-        reasoning_tokens=int(details.get("reasoning_tokens") or 0) if isinstance(details, dict) else 0,
+        reasoning_tokens=int(details.get("reasoning_tokens") or 0)
+        if isinstance(details, dict)
+        else 0,
         cost=float(cost) if isinstance(cost, int | float) else None,
     )

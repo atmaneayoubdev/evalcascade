@@ -32,7 +32,7 @@ class EvaluateRequest(BaseModel):
     trace: AgentTrace | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     metrics: list[str | MetricSpec] = Field(
-        default_factory=lambda: ["answer_relevance"],
+        default_factory=lambda: list[str | MetricSpec](["answer_relevance"]),
         description="Metric names, suite names (general/rag/agent) or {name, params}.",
     )
     policy: Literal["cascade", "jev", "llm", "deterministic"] | None = Field(

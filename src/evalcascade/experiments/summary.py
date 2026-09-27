@@ -110,7 +110,10 @@ def latency_stats(values: Sequence[float]) -> LatencyStats:
     if not values:
         return LatencyStats()
     return LatencyStats(
-        mean=statistics.fmean(values), p50=percentile(values, 50), p95=percentile(values, 95), max=max(values)
+        mean=statistics.fmean(values),
+        p50=percentile(values, 50),
+        p95=percentile(values, 95),
+        max=max(values),
     )
 
 

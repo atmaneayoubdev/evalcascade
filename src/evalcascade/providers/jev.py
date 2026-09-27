@@ -66,7 +66,9 @@ class ScoreQuestion(BaseModel):
     criteria: list[StructuredGuidance] = Field(min_length=1)
 
 
-DecisionQuestion = Annotated[NoulQuestion | ChoiceQuestion | ScoreQuestion, Field(discriminator="type")]
+DecisionQuestion = Annotated[
+    NoulQuestion | ChoiceQuestion | ScoreQuestion, Field(discriminator="type")
+]
 
 
 class DecisionsRequest(BaseModel):
@@ -204,7 +206,7 @@ class JevClient:
             request = DecisionsRequest(
                 model=model or self.model,
                 state=state,
-                questions=questions,  # type: ignore[arg-type]
+                questions=questions,
                 session_id=session_id,
             )
         except ValidationError as exc:

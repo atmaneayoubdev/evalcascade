@@ -125,7 +125,9 @@ class Metric(BaseModel):
             a = answers[q.id]
             acc += a.score * q.weight
             total_weight += q.weight
-        explanations = [answers[q.id].explanation for q in rubric.questions if answers[q.id].explanation]
+        explanations = [
+            answers[q.id].explanation for q in rubric.questions if answers[q.id].explanation
+        ]
         return Aggregation(
             score=acc / total_weight if total_weight else 0.0,
             explanation=" ".join(e for e in explanations if e) or None,

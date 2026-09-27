@@ -218,7 +218,9 @@ def answer_choice(
         raise ValueError(f"choice {choice!r} is not one of {sorted(question.options)}")
     probs = None
     if probabilities:
-        probs = {k: v for k, v in _normalize_distribution(probabilities).items() if k in question.options}
+        probs = {
+            k: v for k, v in _normalize_distribution(probabilities).items() if k in question.options
+        }
     if probs:
         score = sum(p * question.option_scores[k] for k, p in probs.items())
     else:
@@ -287,7 +289,9 @@ def pass_probability(
         return answer.score  # P(desirable outcome)
     if answer.probabilities:
         if isinstance(question, ChoiceQuestion):
-            return sum(p for k, p in answer.probabilities.items() if question.option_scores[k] >= threshold)
+            return sum(
+                p for k, p in answer.probabilities.items() if question.option_scores[k] >= threshold
+            )
         if isinstance(question, ScoreQuestion):
             return sum(
                 p for k, p in answer.probabilities.items() if question.score_of(int(k)) >= threshold

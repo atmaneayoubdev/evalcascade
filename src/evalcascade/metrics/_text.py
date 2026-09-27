@@ -40,14 +40,16 @@ def matches_reference(output: str, references: list[str], mode: str) -> str | No
             return ref
         if mode == "contains":
             norm_ref = normalize_answer(ref)
-            if norm_ref and re.search(rf"(?<!\w){re.escape(norm_ref)}(?!\w)", normalize_answer(output)):
+            if norm_ref and re.search(
+                rf"(?<!\w){re.escape(norm_ref)}(?!\w)", normalize_answer(output)
+            ):
                 return ref
     return None
 
 
 def split_sentences(text: str) -> list[str]:
     """Lightweight sentence splitter (no model, no dependency)."""
-    parts = []
+    parts: list[str] = []
     for block in re.split(r"\n\s*\n|\n(?=\s*[-*•\d]+[.)]?\s)", text.strip()):
         parts.extend(s.strip() for s in _SENTENCE.split(block.strip()) if s.strip())
     return parts
@@ -75,7 +77,8 @@ def numeric_citations(sentence: str) -> list[int]:
 
 
 def strip_citations(sentence: str) -> str:
-    return _WS.sub(" ", _NUMERIC_CITATION.sub("", sentence)).strip()
+    text = _WS.sub(" ", _NUMERIC_CITATION.sub("", sentence)).strip()
+    return re.sub(r"\s+([.,;:!?])", r"\1", text)
 
 
 def truncate(text: str | None, max_chars: int = DEFAULT_MAX_CHARS) -> str | None:

@@ -84,10 +84,28 @@ def result_table(result: EvaluationResult, title: str | None = None) -> Table:
     table.add_column("Notes", overflow="fold", max_width=60)
     for m in result.metrics:
         if m.status == "skipped":
-            table.add_row(m.display_name, "—", Text("skipped", style="dim"), route_text("none"), "—", "—", "—", Text(m.message or "", style="dim"))
+            table.add_row(
+                m.display_name,
+                "—",
+                Text("skipped", style="dim"),
+                route_text("none"),
+                "—",
+                "—",
+                "—",
+                Text(m.message or "", style="dim"),
+            )
             continue
         if m.status == "error":
-            table.add_row(m.display_name, "—", Text("error", style="red"), route_text(m.route), "—", fmt_ms(m.latency_ms), fmt_cost(m.cost_usd), Text(m.message or "", style="red"))
+            table.add_row(
+                m.display_name,
+                "—",
+                Text("error", style="red"),
+                route_text(m.route),
+                "—",
+                fmt_ms(m.latency_ms),
+                fmt_cost(m.cost_usd),
+                Text(m.message or "", style="red"),
+            )
             continue
         conf = fmt_score(m.confidence, 2)
         if m.escalated and m.judgments:
@@ -114,7 +132,8 @@ def result_panel(result: EvaluationResult) -> Panel:
         (fmt_score(result.overall_score), "bold cyan"),
         "   ",
         pass_text(result.passed),
-        f"   {fmt_ms(result.latency_ms)}   {fmt_cost(result.cost_usd)}   escalations: {result.escalations}",
+        f"   {fmt_ms(result.latency_ms)}   {fmt_cost(result.cost_usd)}"
+        f"   escalations: {result.escalations}",
     )
     return Panel(Group(header, result_table(result)), title="EvalCascade", border_style="cyan")
 
@@ -128,14 +147,22 @@ def experiment_summary(experiment: Experiment) -> Group:
     kpis.add_row(
         Text.assemble(("Overall ", "dim"), (fmt_score(s.overall_score), "bold cyan")),
         Text.assemble(("Pass rate ", "dim"), (fmt_pct(s.pass_rate), "bold")),
-        Text.assemble(("Cases ", "dim"), (str(s.num_cases), "bold"), ("  Evaluations ", "dim"), (str(s.num_evaluations), "bold")),
+        Text.assemble(
+            ("Cases ", "dim"),
+            (str(s.num_cases), "bold"),
+            ("  Evaluations ", "dim"),
+            (str(s.num_evaluations), "bold"),
+        ),
         Text.assemble(("Cost ", "dim"), (fmt_cost(s.cost_usd, s.cost_complete), "bold")),
     )
     kpis.add_row(
         Text.assemble(("Jev acceptance ", "dim"), (fmt_pct(r.jev_acceptance_rate), "bold green")),
         Text.assemble(("Escalation ", "dim"), (fmt_pct(r.escalation_rate), "bold yellow")),
         Text.assemble(("Deterministic ", "dim"), (fmt_pct(r.deterministic_rate), "bold cyan")),
-        Text.assemble(("Latency p50/p95 ", "dim"), (f"{fmt_ms(s.latency_ms.p50)} / {fmt_ms(s.latency_ms.p95)}", "bold")),
+        Text.assemble(
+            ("Latency p50/p95 ", "dim"),
+            (f"{fmt_ms(s.latency_ms.p50)} / {fmt_ms(s.latency_ms.p95)}", "bold"),
+        ),
     )
     table = Table(header_style="bold", expand=False)
     table.add_column("Metric")
@@ -161,8 +188,17 @@ def experiment_summary(experiment: Experiment) -> Group:
             f"{m.skipped}/{m.errors}",
             fmt_cost(m.cost_usd),
         )
-    title = Text.assemble(("Experiment ", "bold"), (experiment.name, "bold cyan"), f"  {experiment.id}  ", demo_badge(experiment.is_demo))
-    notes = [Text("* cost incomplete: some evaluator calls reported no cost", style="dim")] if not s.cost_complete else []
+    title = Text.assemble(
+        ("Experiment ", "bold"),
+        (experiment.name, "bold cyan"),
+        f"  {experiment.id}  ",
+        demo_badge(experiment.is_demo),
+    )
+    notes = (
+        [Text("* cost incomplete: some evaluator calls reported no cost", style="dim")]
+        if not s.cost_complete
+        else []
+    )
     return Group(title, kpis, table, *notes)
 
 
@@ -210,7 +246,14 @@ def datasets_table(items: list[DatasetInfo]) -> Table:
     return table
 
 
-def _delta_text(d: Delta, *, higher_is_better: bool = True, pct: bool = False, cost: bool = False, ms: bool = False) -> Text:
+def _delta_text(
+    d: Delta,
+    *,
+    higher_is_better: bool = True,
+    pct: bool = False,
+    cost: bool = False,
+    ms: bool = False,
+) -> Text:
     if d.delta is None:
         return Text("—", style="dim")
     good = d.delta > 0 if higher_is_better else d.delta < 0
@@ -236,28 +279,46 @@ def comparison_table(cmp: Comparison) -> Group:
         ("Overall score", cmp.overall_score, {}, fmt_score),
         ("Pass rate", cmp.pass_rate, {"pct": True}, fmt_pct),
         ("Jev acceptance rate", cmp.jev_acceptance_rate, {"pct": True}, fmt_pct),
-        ("LLM escalation rate", cmp.escalation_rate, {"pct": True, "higher_is_better": False}, fmt_pct),
+        (
+            "LLM escalation rate",
+            cmp.escalation_rate,
+            {"pct": True, "higher_is_better": False},
+            fmt_pct,
+        ),
         ("Total cost", cmp.cost_usd, {"cost": True, "higher_is_better": False}, fmt_cost),
         ("Cost / case", cmp.cost_per_case_usd, {"cost": True, "higher_is_better": False}, fmt_cost),
         ("Latency p50", cmp.latency_p50_ms, {"ms": True, "higher_is_better": False}, fmt_ms),
         ("Latency p95", cmp.latency_p95_ms, {"ms": True, "higher_is_better": False}, fmt_ms),
     ]
     for label, delta, opts, fmt in rows:
-        table.add_row(label, fmt(delta.baseline), fmt(delta.candidate), _delta_text(delta, **opts))  # type: ignore[operator, arg-type]
+        table.add_row(label, fmt(delta.baseline), fmt(delta.candidate), _delta_text(delta, **opts))
     table.add_section()
     for name, delta in cmp.metrics.items():
-        table.add_row(name, fmt_score(delta.baseline), fmt_score(delta.candidate), _delta_text(delta))
+        table.add_row(
+            name, fmt_score(delta.baseline), fmt_score(delta.candidate), _delta_text(delta)
+        )
     c = cmp.cases
     footer = Text(
         f"Cases: {c.matched} matched · {c.improved} improved · {c.regressed} regressed · "
-        f"{c.unchanged} unchanged · {c.only_in_baseline} only in baseline · {c.only_in_candidate} only in candidate",
+        f"{c.unchanged} unchanged · {c.only_in_baseline} only in baseline · "
+        f"{c.only_in_candidate} only in candidate",
         style="dim",
     )
     title = Text.assemble(
-        ("Baseline ", "dim"), (cmp.baseline.name, "bold"), f" ({cmp.baseline.id}) ", demo_badge(cmp.baseline.is_demo),
-        ("  vs  candidate ", "dim"), (cmp.candidate.name, "bold"), f" ({cmp.candidate.id}) ", demo_badge(cmp.candidate.is_demo),
+        ("Baseline ", "dim"),
+        (cmp.baseline.name, "bold"),
+        f" ({cmp.baseline.id}) ",
+        demo_badge(cmp.baseline.is_demo),
+        ("  vs  candidate ", "dim"),
+        (cmp.candidate.name, "bold"),
+        f" ({cmp.candidate.id}) ",
+        demo_badge(cmp.candidate.is_demo),
     )
-    warn = [] if cmp.dataset_match else [Text("! baseline and candidate were run on different datasets", style="yellow")]
+    warn = (
+        []
+        if cmp.dataset_match
+        else [Text("! baseline and candidate were run on different datasets", style="yellow")]
+    )
     return Group(title, *warn, table, footer)
 
 
@@ -267,7 +328,11 @@ def gate_panel(result: GateResult) -> Panel:
     table.add_column("Result")
     table.add_column("Details")
     for c in result.checks:
-        table.add_row(c.name, Text("ok", style="green") if c.passed else Text("FAIL", style="red bold"), c.message)
+        table.add_row(
+            c.name,
+            Text("ok", style="green") if c.passed else Text("FAIL", style="red bold"),
+            c.message,
+        )
     title = "Regression gate: PASSED" if result.passed else "Regression gate: FAILED"
     return Panel(table, title=title, border_style="green" if result.passed else "red")
 

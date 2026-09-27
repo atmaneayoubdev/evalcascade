@@ -188,7 +188,10 @@ class ExperimentStore:
                     except ValueError:
                         raise NotFoundError(f"invalid reference {ref!r}") from None
                 found = s.scalars(
-                    select(ExperimentRecord.id).order_by(ExperimentRecord.created_at.desc()).offset(offset).limit(1)
+                    select(ExperimentRecord.id)
+                    .order_by(ExperimentRecord.created_at.desc())
+                    .offset(offset)
+                    .limit(1)
                 ).first()
                 if found is None:
                     raise NotFoundError("no experiments recorded yet")
@@ -204,7 +207,9 @@ class ExperimentStore:
             if by_name is not None:
                 return by_name
             prefixed = list(
-                s.scalars(select(ExperimentRecord.id).where(ExperimentRecord.id.startswith(ref)).limit(2))
+                s.scalars(
+                    select(ExperimentRecord.id).where(ExperimentRecord.id.startswith(ref)).limit(2)
+                )
             )
             if len(prefixed) == 1:
                 return prefixed[0]
@@ -241,7 +246,9 @@ class ExperimentStore:
         self, *, include_demo: bool = True, limit: int = 100, name: str | None = None
     ) -> list[ExperimentListItem]:
         with self._session() as s:
-            query = select(ExperimentRecord).order_by(ExperimentRecord.created_at.desc()).limit(limit)
+            query = (
+                select(ExperimentRecord).order_by(ExperimentRecord.created_at.desc()).limit(limit)
+            )
             if not include_demo:
                 query = query.where(ExperimentRecord.is_demo.is_(False))
             if name is not None:
@@ -275,7 +282,9 @@ class ExperimentStore:
 
     def delete_demo_experiments(self) -> int:
         with self._session() as s:
-            ids = list(s.scalars(select(ExperimentRecord.id).where(ExperimentRecord.is_demo.is_(True))))
+            ids = list(
+                s.scalars(select(ExperimentRecord.id).where(ExperimentRecord.is_demo.is_(True)))
+            )
             if ids:
                 s.execute(delete(CaseResultRecord).where(CaseResultRecord.experiment_id.in_(ids)))
                 s.execute(delete(ExperimentRecord).where(ExperimentRecord.id.in_(ids)))
@@ -294,11 +303,18 @@ class ExperimentStore:
             elif filter == "escalated":
                 query = query.where(CaseResultRecord.escalations > 0)
             total = int(s.scalar(select(func.count()).select_from(query.subquery())) or 0)
-            records = s.scalars(query.order_by(CaseResultRecord.position).offset(offset).limit(limit))
+            records = s.scalars(
+                query.order_by(CaseResultRecord.position).offset(offset).limit(limit)
+            )
             rows = []
             for r in records:
                 metrics = {
-                    m["metric"]: MetricCell(score=m.get("score"), passed=m.get("passed"), route=m.get("route", "none"), status=m.get("status", "ok"))
+                    m["metric"]: MetricCell(
+                        score=m.get("score"),
+                        passed=m.get("passed"),
+                        route=m.get("route", "none"),
+                        status=m.get("status", "ok"),
+                    )
                     for m in r.data.get("metrics", [])
                 }
                 rows.append(
@@ -344,10 +360,20 @@ class ExperimentStore:
         path: Path | None = dataset.path
         if copy_to_workspace and self.home is not None:
             target = Path(self.home) / "datasets" / f"{ds_name}.jsonl"
-            if target.exists() and not overwrite and (path is None or target.resolve() != Path(path).resolve()):
-                raise DatasetError(f"dataset {ds_name!r} already exists in the workspace (use overwrite)")
+            if (
+                target.exists()
+                and not overwrite
+                and (path is None or target.resolve() != Path(path).resolve())
+            ):
+                raise DatasetError(
+                    f"dataset {ds_name!r} already exists in the workspace (use overwrite)"
+                )
             target.parent.mkdir(parents=True, exist_ok=True)
-            if path is not None and path.suffix.lower() == ".jsonl" and path.resolve() != target.resolve():
+            if (
+                path is not None
+                and path.suffix.lower() == ".jsonl"
+                and path.resolve() != target.resolve()
+            ):
                 shutil.copyfile(path, target)
             elif path is None or path.resolve() != target.resolve():
                 dataset.to_jsonl(target)
@@ -369,7 +395,10 @@ class ExperimentStore:
 
     def list_datasets(self) -> list[DatasetInfo]:
         with self._session() as s:
-            return [_dataset_info(r) for r in s.scalars(select(DatasetRecord).order_by(DatasetRecord.name))]
+            return [
+                _dataset_info(r)
+                for r in s.scalars(select(DatasetRecord).order_by(DatasetRecord.name))
+            ]
 
     def get_dataset_info(self, name: str) -> DatasetInfo:
         with self._session() as s:

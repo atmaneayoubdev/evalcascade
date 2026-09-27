@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 import platform
@@ -34,7 +35,9 @@ app = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 datasets_app = typer.Typer(help="Create, import and inspect datasets.", no_args_is_help=True)
-experiments_app = typer.Typer(help="List, inspect, export and delete experiments.", no_args_is_help=True)
+experiments_app = typer.Typer(
+    help="List, inspect, export and delete experiments.", no_args_is_help=True
+)
 app.add_typer(datasets_app, name="datasets")
 app.add_typer(experiments_app, name="experiments")
 
@@ -69,10 +72,16 @@ def _version_callback(value: bool) -> None:
 @app.callback()
 def _main(
     config: Annotated[
-        Path | None, typer.Option("--config", "-c", help=f"Path to {CONFIG_FILENAME}.", envvar="EVALCASCADE_CONFIG")
+        Path | None,
+        typer.Option(
+            "--config", "-c", help=f"Path to {CONFIG_FILENAME}.", envvar="EVALCASCADE_CONFIG"
+        ),
     ] = None,
     version: Annotated[
-        bool, typer.Option("--version", callback=_version_callback, is_eager=True, help="Show the version.")
+        bool,
+        typer.Option(
+            "--version", callback=_version_callback, is_eager=True, help="Show the version."
+        ),
     ] = False,
 ) -> None:
     state.config = config
@@ -122,8 +131,12 @@ temperature = 0.0
 @app.command()
 def init(
     directory: Annotated[Path, typer.Argument(help="Project directory.")] = Path("."),
-    demo: Annotated[bool, typer.Option("--demo", help="Also seed demonstration experiments.")] = False,
-    force: Annotated[bool, typer.Option("--force", help="Overwrite an existing evalcascade.toml.")] = False,
+    demo: Annotated[
+        bool, typer.Option("--demo", help="Also seed demonstration experiments.")
+    ] = False,
+    force: Annotated[
+        bool, typer.Option("--force", help="Overwrite an existing evalcascade.toml.")
+    ] = False,
 ) -> None:
     """Create evalcascade.toml, a local workspace and sample datasets."""
     from evalcascade.datasets import SAMPLE_DATASETS, sample_path
@@ -148,7 +161,9 @@ def init(
         target = data_dir / f"{name}.jsonl"
         if not target.exists():
             shutil.copyfile(sample_path(name), target)
-        store.register_dataset(Dataset.from_jsonl(target, name=name), copy_to_workspace=False, overwrite=True)
+        store.register_dataset(
+            Dataset.from_jsonl(target, name=name), copy_to_workspace=False, overwrite=True
+        )
     console.print(f"[green]added[/green] sample datasets to {data_dir}")
     console.print(f"[green]database[/green] {settings.resolved_database_url}")
 
@@ -164,7 +179,9 @@ def init(
         from evalcascade.demo import seed_demo
 
         created = seed_demo(store)
-        console.print(f"[yellow]seeded {len(created)} DEMO experiments[/yellow] (simulated, not real results)")
+        console.print(
+            f"[yellow]seeded {len(created)} DEMO experiments[/yellow] (simulated, not real results)"
+        )
     store.dispose()
     console.print(
         "\nNext steps:\n"
@@ -177,7 +194,9 @@ def init(
 
 @app.command()
 def demo(
-    clear: Annotated[bool, typer.Option("--clear", help="Remove demo experiments instead.")] = False,
+    clear: Annotated[
+        bool, typer.Option("--clear", help="Remove demo experiments instead.")
+    ] = False,
 ) -> None:
     """Seed (or clear) demonstration experiments. No API calls; clearly marked DEMO."""
     from evalcascade.demo import seed_demo
@@ -198,7 +217,10 @@ def demo(
 @app.command()
 def doctor(
     live: Annotated[
-        bool, typer.Option("--live", help="Also send one tiny Jev decision and one judge request (costs < $0.001).")
+        bool,
+        typer.Option(
+            "--live", help="Also send one tiny Jev decision and one judge request (costs < $0.001)."
+        ),
     ] = False,
 ) -> None:
     """Check the environment, database, configuration and provider connectivity."""
@@ -206,7 +228,9 @@ def doctor(
     hard_fail = False
 
     py_ok = sys.version_info >= (3, 12)
-    rows.append(("ok" if py_ok else "fail", "Python", f"{platform.python_version()} ({sys.executable})"))
+    rows.append(
+        ("ok" if py_ok else "fail", "Python", f"{platform.python_version()} ({sys.executable})")
+    )
     hard_fail |= not py_ok
     rows.append(("ok", "EvalCascade", __version__))
 
@@ -216,23 +240,57 @@ def doctor(
         rows.append(("fail", "Configuration", str(exc)))
         _doctor_table(rows)
         raise typer.Exit(1) from None
-    rows.append(("ok", "Configuration", str(settings.config_file) if settings.config_file else "defaults + environment"))
+    rows.append(
+        (
+            "ok",
+            "Configuration",
+            str(settings.config_file) if settings.config_file else "defaults + environment",
+        )
+    )
 
     try:
         store = state.store()
         ok = store.ping()
         n_exp, n_ds = store.count_experiments(), len(store.list_datasets())
-        rows.append(("ok" if ok else "fail", "Database", f"{settings.resolved_database_url} ({n_exp} experiments, {n_ds} datasets)"))
+        rows.append(
+            (
+                "ok" if ok else "fail",
+                "Database",
+                f"{settings.resolved_database_url} ({n_exp} experiments, {n_ds} datasets)",
+            )
+        )
         hard_fail |= not ok
     except Exception as exc:
         rows.append(("fail", "Database", f"{type(exc).__name__}: {exc}"))
         hard_fail = True
 
     key_set = settings.openrouter_api_key is not None
-    rows.append(("ok" if key_set else "warn", "OPENROUTER_API_KEY", "set (value hidden)" if key_set else "not set — Jev is unavailable; deterministic metrics still work"))
+    rows.append(
+        (
+            "ok" if key_set else "warn",
+            "OPENROUTER_API_KEY",
+            "set (value hidden)"
+            if key_set
+            else "not set — Jev is unavailable; deterministic metrics still work",
+        )
+    )
     judge_key = settings.judge_api_key() is not None
-    rows.append(("ok" if judge_key else "warn", "LLM judge", f"{settings.judge.provider} · {settings.judge.model} · {settings.judge.base_url} · key {'set' if judge_key else 'NOT set'}"))
-    rows.append(("ok", "Policy", f"primary={settings.policy.primary} fallback={settings.policy.fallback} escalate_below={settings.policy.escalate_below}"))
+    rows.append(
+        (
+            "ok" if judge_key else "warn",
+            "LLM judge",
+            f"{settings.judge.provider} · {settings.judge.model} · {settings.judge.base_url} "
+            f"· key {'set' if judge_key else 'NOT set'}",
+        )
+    )
+    rows.append(
+        (
+            "ok",
+            "Policy",
+            f"primary={settings.policy.primary} fallback={settings.policy.fallback} "
+            f"escalate_below={settings.policy.escalate_below}",
+        )
+    )
 
     if key_set:
         rows.append(asyncio.run(_check_openrouter_key(settings)))
@@ -242,7 +300,15 @@ def doctor(
     from evalcascade.api.static import find_dashboard
 
     dash = find_dashboard()
-    rows.append(("ok" if dash else "warn", "Dashboard bundle", str(dash) if dash else "not built — API only (build with: python scripts/build_dashboard.py)"))
+    rows.append(
+        (
+            "ok" if dash else "warn",
+            "Dashboard bundle",
+            str(dash)
+            if dash
+            else "not built — API only (build with: python scripts/build_dashboard.py)",
+        )
+    )
     _doctor_table(rows)
     if hard_fail:
         raise typer.Exit(1)
@@ -275,7 +341,11 @@ async def _check_openrouter_key(settings: Settings) -> tuple[str, str, str]:
         data = response.data.get("data", {}) if isinstance(response.data.get("data"), dict) else {}
         limit = data.get("limit_remaining")
         extra = f", credit remaining ${limit:.2f}" if isinstance(limit, int | float) else ""
-        return ("ok", "OpenRouter connectivity", f"authenticated ({response.latency_ms:.0f} ms{extra})")
+        return (
+            "ok",
+            "OpenRouter connectivity",
+            f"authenticated ({response.latency_ms:.0f} ms{extra})",
+        )
     except EvalCascadeError as exc:
         return ("fail", "OpenRouter connectivity", str(exc))
     finally:
@@ -288,7 +358,9 @@ async def _live_checks(settings: Settings, *, jev: bool, judge: bool) -> list[tu
     from evalcascade.evaluators.llm_judge import LLMJudge
     from evalcascade.metrics import AnswerRelevance
 
-    request = EvaluationRequest(input="What is the capital of France?", output="Paris is the capital of France.")
+    request = EvaluationRequest(
+        input="What is the capital of France?", output="Paris is the capital of France."
+    )
     metric = AnswerRelevance()
     rows = []
     for enabled, label, evaluator in (
@@ -304,7 +376,10 @@ async def _live_checks(settings: Settings, *, jev: bool, judge: bool) -> list[tu
         if j.error:
             rows.append(("fail", label, j.error))
         else:
-            rows.append(("ok", label, f"{j.model} · score {j.score:.2f} · confidence {render.fmt_score(j.confidence, 2)} · {j.latency_ms:.0f} ms · {render.fmt_cost(j.cost_usd, j.cost_source != 'unknown')}"))
+            confidence = render.fmt_score(j.confidence, 2)
+            cost = render.fmt_cost(j.cost_usd, j.cost_source != "unknown")
+            details = f"{j.model} · score {j.score:.2f} · confidence {confidence}"
+            rows.append(("ok", label, f"{details} · {j.latency_ms:.0f} ms · {cost}"))
     return rows
 
 
@@ -335,21 +410,36 @@ def _build_suite(
     return EvaluationSuite(metrics, policy=policy, settings=settings)
 
 
-MetricOpt = Annotated[list[str] | None, typer.Option("--metric", "-m", help="Metric name (repeatable).")]
-SuiteOpt = Annotated[list[str] | None, typer.Option("--suite", "-s", help="Metric bundle: general, rag, agent (repeatable).")]
+MetricOpt = Annotated[
+    list[str] | None, typer.Option("--metric", "-m", help="Metric name (repeatable).")
+]
+SuiteOpt = Annotated[
+    list[str] | None,
+    typer.Option("--suite", "-s", help="Metric bundle: general, rag, agent (repeatable)."),
+]
 PolicyOpt = Annotated[
     str | None, typer.Option("--policy", "-p", help="cascade (default), jev, llm or deterministic.")
 ]
-EscalateOpt = Annotated[float | None, typer.Option("--escalate-below", min=0.0, max=1.0, help="Escalation threshold.")]
+EscalateOpt = Annotated[
+    float | None, typer.Option("--escalate-below", min=0.0, max=1.0, help="Escalation threshold.")
+]
 
 
 @app.command()
 def evaluate(
     input: Annotated[str | None, typer.Option("--input", "-i", help="User input / prompt.")] = None,
-    output: Annotated[str | None, typer.Option("--output", "-o", help="System output to evaluate.")] = None,
-    context: Annotated[list[str] | None, typer.Option("--context", help="Retrieved passage (repeatable).")] = None,
-    expected: Annotated[str | None, typer.Option("--expected", "-e", help="Reference answer.")] = None,
-    trace_file: Annotated[Path | None, typer.Option("--trace", help="JSON file with an agent trace.")] = None,
+    output: Annotated[
+        str | None, typer.Option("--output", "-o", help="System output to evaluate.")
+    ] = None,
+    context: Annotated[
+        list[str] | None, typer.Option("--context", help="Retrieved passage (repeatable).")
+    ] = None,
+    expected: Annotated[
+        str | None, typer.Option("--expected", "-e", help="Reference answer.")
+    ] = None,
+    trace_file: Annotated[
+        Path | None, typer.Option("--trace", help="JSON file with an agent trace.")
+    ] = None,
     metric: MetricOpt = None,
     suite: SuiteOpt = None,
     policy: PolicyOpt = None,
@@ -360,7 +450,9 @@ def evaluate(
     try:
         trace = json.loads(trace_file.read_text(encoding="utf-8")) if trace_file else None
         default = "agent" if trace else "rag" if context else "general"
-        evaluation_suite = _build_suite(metric, suite, policy, escalate_below, default_suite=default)
+        evaluation_suite = _build_suite(
+            metric, suite, policy, escalate_below, default_suite=default
+        )
         result = evaluation_suite.evaluate_sync(
             input=input, output=output, context=context, expected=expected, trace=trace
         )
@@ -374,18 +466,30 @@ def evaluate(
 
 @app.command()
 def run(
-    dataset: Annotated[str, typer.Argument(help="JSONL path, registered dataset name, or sample:<name>.")],
+    dataset: Annotated[
+        str, typer.Argument(help="JSONL path, registered dataset name, or sample:<name>.")
+    ],
     metric: MetricOpt = None,
     suite: SuiteOpt = None,
     policy: PolicyOpt = None,
     escalate_below: EscalateOpt = None,
-    name: Annotated[str | None, typer.Option("--name", "-n", help="Experiment name (e.g. baseline).")] = None,
+    name: Annotated[
+        str | None, typer.Option("--name", "-n", help="Experiment name (e.g. baseline).")
+    ] = None,
     tag: Annotated[list[str] | None, typer.Option("--tag", help="Tag (repeatable).")] = None,
     notes: Annotated[str | None, typer.Option("--notes", help="Free-text notes.")] = None,
-    concurrency: Annotated[int, typer.Option("--concurrency", min=1, max=64, help="Cases evaluated in parallel.")] = 8,
-    limit: Annotated[int | None, typer.Option("--limit", min=1, help="Only evaluate the first N cases.")] = None,
-    save: Annotated[bool, typer.Option("--save/--no-save", help="Record the experiment in the database.")] = True,
-    output_path: Annotated[Path | None, typer.Option("--output", "-o", help="Also export the experiment as JSON.")] = None,
+    concurrency: Annotated[
+        int, typer.Option("--concurrency", min=1, max=64, help="Cases evaluated in parallel.")
+    ] = 8,
+    limit: Annotated[
+        int | None, typer.Option("--limit", min=1, help="Only evaluate the first N cases.")
+    ] = None,
+    save: Annotated[
+        bool, typer.Option("--save/--no-save", help="Record the experiment in the database.")
+    ] = True,
+    output_path: Annotated[
+        Path | None, typer.Option("--output", "-o", help="Also export the experiment as JSON.")
+    ] = None,
 ) -> None:
     """Run an evaluation suite over a dataset and record the experiment."""
     from evalcascade.storage.store import resolve_dataset
@@ -393,8 +497,16 @@ def run(
     try:
         store = state.store() if save else None
         ds = resolve_dataset(dataset, store or state.store())
-        default = "agent" if ds.field_coverage()["trace"] else "rag" if ds.field_coverage()["context"] else "general"
-        evaluation_suite = _build_suite(metric, suite, policy, escalate_below, default_suite=default)
+        default = (
+            "agent"
+            if ds.field_coverage()["trace"]
+            else "rag"
+            if ds.field_coverage()["context"]
+            else "general"
+        )
+        evaluation_suite = _build_suite(
+            metric, suite, policy, escalate_below, default_suite=default
+        )
         evaluation_suite.preflight()
     except EvalCascadeError as exc:
         raise fail(str(exc)) from None
@@ -446,8 +558,17 @@ def run(
 
 TEMPLATES: dict[str, list[dict[str, Any]]] = {
     "general": [
-        {"id": "case-001", "input": "What is the capital of Japan?", "output": "Tokyo.", "expected": {"answer": "Tokyo"}},
-        {"id": "case-002", "input": "Write a haiku about rain.", "output": "Soft rain on the roof / ..."},
+        {
+            "id": "case-001",
+            "input": "What is the capital of Japan?",
+            "output": "Tokyo.",
+            "expected": {"answer": "Tokyo"},
+        },
+        {
+            "id": "case-002",
+            "input": "Write a haiku about rain.",
+            "output": "Soft rain on the roof / ...",
+        },
     ],
     "rag": [
         {
@@ -464,8 +585,27 @@ TEMPLATES: dict[str, list[dict[str, Any]]] = {
             "input": "What's the weather in Oslo?",
             "output": "It is 4°C and cloudy in Oslo.",
             "trace": {
-                "tools": [{"name": "get_weather", "description": "Weather for a city", "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}],
-                "steps": [{"type": "tool_call", "tool_call": {"name": "get_weather", "arguments": {"city": "Oslo"}, "result": {"temp": 4, "conditions": "cloudy"}}}],
+                "tools": [
+                    {
+                        "name": "get_weather",
+                        "description": "Weather for a city",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {"city": {"type": "string"}},
+                            "required": ["city"],
+                        },
+                    }
+                ],
+                "steps": [
+                    {
+                        "type": "tool_call",
+                        "tool_call": {
+                            "name": "get_weather",
+                            "arguments": {"city": "Oslo"},
+                            "result": {"temp": 4, "conditions": "cloudy"},
+                        },
+                    }
+                ],
             },
             "expected": {"tools": ["get_weather"], "max_tool_calls": 1},
         }
@@ -478,7 +618,9 @@ def datasets_list() -> None:
     """List registered datasets."""
     items = state.store().list_datasets()
     if not items:
-        console.print("No datasets registered. Try: evalcascade init  or  evalcascade datasets import FILE")
+        console.print(
+            "No datasets registered. Try: evalcascade init  or  evalcascade datasets import FILE"
+        )
         return
     console.print(render.datasets_table(items))
 
@@ -486,7 +628,9 @@ def datasets_list() -> None:
 @datasets_app.command("import")
 def datasets_import(
     path: Annotated[Path, typer.Argument(help="JSONL (or JSON list) file.")],
-    name: Annotated[str | None, typer.Option("--name", help="Dataset name (default: file stem).")] = None,
+    name: Annotated[
+        str | None, typer.Option("--name", help="Dataset name (default: file stem).")
+    ] = None,
     description: Annotated[str | None, typer.Option("--description")] = None,
     force: Annotated[bool, typer.Option("--force", help="Replace an existing dataset.")] = False,
 ) -> None:
@@ -495,7 +639,9 @@ def datasets_import(
 
     try:
         ds = Dataset.from_jsonl(path, name=name)
-        info = state.store().register_dataset(ds, name=name, description=description, overwrite=force)
+        info = state.store().register_dataset(
+            ds, name=name, description=description, overwrite=force
+        )
     except EvalCascadeError as exc:
         raise fail(str(exc)) from None
     console.print(f"[green]imported[/green] {info.name}: {info.num_cases} cases → {info.path}")
@@ -504,8 +650,12 @@ def datasets_import(
 @datasets_app.command("create")
 def datasets_create(
     name: Annotated[str, typer.Argument(help="Dataset name.")],
-    template: Annotated[str, typer.Option("--template", "-t", help="general, rag or agent.")] = "general",
-    output: Annotated[Path | None, typer.Option("--output", "-o", help="Where to write the JSONL file.")] = None,
+    template: Annotated[
+        str, typer.Option("--template", "-t", help="general, rag or agent.")
+    ] = "general",
+    output: Annotated[
+        Path | None, typer.Option("--output", "-o", help="Where to write the JSONL file.")
+    ] = None,
 ) -> None:
     """Create a new dataset from a template and register it."""
     from evalcascade.datasets import Dataset
@@ -518,10 +668,15 @@ def datasets_create(
     ds = Dataset.from_records(TEMPLATES[template], name=name)
     ds.to_jsonl(target)
     try:
-        state.store().register_dataset(Dataset.from_jsonl(target, name=name), copy_to_workspace=False)
+        state.store().register_dataset(
+            Dataset.from_jsonl(target, name=name), copy_to_workspace=False
+        )
     except EvalCascadeError as exc:
         raise fail(str(exc)) from None
-    console.print(f"[green]created[/green] {target} ({len(ds)} example case(s)) — edit it, then: evalcascade run {target}")
+    console.print(
+        f"[green]created[/green] {target} ({len(ds)} example case(s)) — edit it, then: "
+        f"evalcascade run {target}"
+    )
 
 
 @datasets_app.command("show")
@@ -537,7 +692,10 @@ def datasets_show(
     except EvalCascadeError as exc:
         raise fail(str(exc)) from None
     coverage = ds.field_coverage()
-    console.print(f"[bold]{ds.name}[/bold] · {len(ds)} cases · hash {ds.hash}" + (f" · {ds.path}" if ds.path else ""))
+    console.print(
+        f"[bold]{ds.name}[/bold] · {len(ds)} cases · hash {ds.hash}"
+        + (f" · {ds.path}" if ds.path else "")
+    )
     console.print("fields: " + ", ".join(f"{k} {v}/{len(ds)}" for k, v in coverage.items()))
     table = Table(header_style="bold")
     table.add_column("id")
@@ -585,8 +743,12 @@ def _load_experiment(ref: str) -> Experiment:
 @experiments_app.command("list")
 def experiments_list(
     limit: Annotated[int, typer.Option("--limit", "-n", min=1)] = 20,
-    include_demo: Annotated[bool, typer.Option("--demo/--no-demo", help="Include demo experiments.")] = True,
-    name: Annotated[str | None, typer.Option("--name", help="Only experiments with this name.")] = None,
+    include_demo: Annotated[
+        bool, typer.Option("--demo/--no-demo", help="Include demo experiments.")
+    ] = True,
+    name: Annotated[
+        str | None, typer.Option("--name", help="Only experiments with this name.")
+    ] = None,
 ) -> None:
     """List recorded experiments (newest first)."""
     items = state.store().list_experiments(include_demo=include_demo, limit=limit, name=name)
@@ -598,7 +760,9 @@ def experiments_list(
 
 @experiments_app.command("show")
 def experiments_show(
-    ref: Annotated[str, typer.Argument(help="Experiment id, prefix, name, latest, or .json export.")],
+    ref: Annotated[
+        str, typer.Argument(help="Experiment id, prefix, name, latest, or .json export.")
+    ],
     cases: Annotated[bool, typer.Option("--cases", help="Also list per-case results.")] = False,
     case_id: Annotated[str | None, typer.Option("--case", help="Show one case in detail.")] = None,
 ) -> None:
@@ -612,9 +776,13 @@ def experiments_show(
     except EvalCascadeError as exc:
         raise fail(str(exc)) from None
     console.print(render.experiment_summary(experiment))
+    evaluator_list = ", ".join(
+        f"{k}={v.get('model', v.get('kind'))}" for k, v in experiment.evaluators.items()
+    )
     console.print(
-        f"[dim]dataset {experiment.dataset.name} ({experiment.dataset.hash}) · created {experiment.created_at:%Y-%m-%d %H:%M} UTC · "
-        f"evaluators: {', '.join(f'{k}={v.get('model', v.get('kind'))}' for k, v in experiment.evaluators.items())}[/dim]"
+        f"[dim]dataset {experiment.dataset.name} ({experiment.dataset.hash}) · "
+        f"created {experiment.created_at:%Y-%m-%d %H:%M} UTC · "
+        f"evaluators: {evaluator_list}[/dim]"
     )
     if cases:
         table = Table(header_style="bold")
@@ -625,7 +793,14 @@ def experiments_show(
         table.add_column("latency", justify="right")
         table.add_column("cost", justify="right")
         for r in experiment.results:
-            table.add_row(r.case_id or "—", render.fmt_score(r.overall_score), render.pass_text(r.passed), str(r.escalations), render.fmt_ms(r.latency_ms), render.fmt_cost(r.cost_usd))
+            table.add_row(
+                r.case_id or "—",
+                render.fmt_score(r.overall_score),
+                render.pass_text(r.passed),
+                str(r.escalations),
+                render.fmt_ms(r.latency_ms),
+                render.fmt_cost(r.cost_usd),
+            )
         console.print(table)
 
 
@@ -644,7 +819,9 @@ def experiments_export(
 
 
 @experiments_app.command("import")
-def experiments_import(path: Annotated[Path, typer.Argument(help="Experiment .json export.")]) -> None:
+def experiments_import(
+    path: Annotated[Path, typer.Argument(help="Experiment .json export.")],
+) -> None:
     """Import an exported experiment into the local database."""
     try:
         experiment = Experiment.from_json(path)
@@ -705,21 +882,49 @@ def _parse_thresholds(values: list[str] | None) -> dict[str, float]:
 
 @app.command()
 def gate(
-    baseline: Annotated[str, typer.Option("--baseline", "-b", help="Baseline experiment (ref or .json).")],
-    candidate: Annotated[str, typer.Option("--candidate", "-c", help="Candidate experiment (ref or .json).")] = "latest",
-    max_quality_drop: Annotated[float, typer.Option("--max-quality-drop", min=0.0, help="Max overall score drop.")] = 0.03,
+    baseline: Annotated[
+        str, typer.Option("--baseline", "-b", help="Baseline experiment (ref or .json).")
+    ],
+    candidate: Annotated[
+        str, typer.Option("--candidate", "-c", help="Candidate experiment (ref or .json).")
+    ] = "latest",
+    max_quality_drop: Annotated[
+        float, typer.Option("--max-quality-drop", min=0.0, help="Max overall score drop.")
+    ] = 0.03,
     metric_threshold: Annotated[
-        list[str] | None, typer.Option("--metric-threshold", help="Per-metric max drop, name=value (repeatable).")
+        list[str] | None,
+        typer.Option("--metric-threshold", help="Per-metric max drop, name=value (repeatable)."),
     ] = None,
-    max_metric_drop: Annotated[float | None, typer.Option("--max-metric-drop", min=0.0, help="Default max drop for every metric.")] = None,
-    max_cost_increase: Annotated[float | None, typer.Option("--max-cost-increase", min=0.0, help="Max relative cost increase (0.2 = +20%).")] = None,
-    max_latency_increase: Annotated[float | None, typer.Option("--max-latency-increase", min=0.0, help="Max relative p95 latency increase.")] = None,
-    min_score: Annotated[float | None, typer.Option("--min-score", min=0.0, max=1.0, help="Minimum candidate overall score.")] = None,
-    max_escalation_rate: Annotated[float | None, typer.Option("--max-escalation-rate", min=0.0, max=1.0)] = None,
-    require_same_dataset: Annotated[bool, typer.Option("--require-same-dataset", help="Fail if datasets differ.")] = False,
+    max_metric_drop: Annotated[
+        float | None,
+        typer.Option("--max-metric-drop", min=0.0, help="Default max drop for every metric."),
+    ] = None,
+    max_cost_increase: Annotated[
+        float | None,
+        typer.Option(
+            "--max-cost-increase", min=0.0, help="Max relative cost increase (0.2 = +20%)."
+        ),
+    ] = None,
+    max_latency_increase: Annotated[
+        float | None,
+        typer.Option("--max-latency-increase", min=0.0, help="Max relative p95 latency increase."),
+    ] = None,
+    min_score: Annotated[
+        float | None,
+        typer.Option("--min-score", min=0.0, max=1.0, help="Minimum candidate overall score."),
+    ] = None,
+    max_escalation_rate: Annotated[
+        float | None, typer.Option("--max-escalation-rate", min=0.0, max=1.0)
+    ] = None,
+    require_same_dataset: Annotated[
+        bool, typer.Option("--require-same-dataset", help="Fail if datasets differ.")
+    ] = False,
     fmt: Annotated[str, typer.Option("--format", "-f", help="text, json or markdown.")] = "text",
     summary_file: Annotated[
-        Path | None, typer.Option("--summary-file", help="Append a markdown report (e.g. $GITHUB_STEP_SUMMARY).")
+        Path | None,
+        typer.Option(
+            "--summary-file", help="Append a markdown report (e.g. $GITHUB_STEP_SUMMARY)."
+        ),
     ] = None,
 ) -> None:
     """Fail (exit 1) when the candidate regresses beyond the configured thresholds."""
@@ -770,16 +975,27 @@ def metrics_cmd() -> None:
     table.add_column("Requires")
     table.add_column("Description", overflow="fold", max_width=70)
     for info in metric_catalog():
-        table.add_row(info.name, info.category, ", ".join(info.primitives) or "—", info.deterministic, ", ".join(info.required_fields), info.description)
+        table.add_row(
+            info.name,
+            info.category,
+            ", ".join(info.primitives) or "—",
+            info.deterministic,
+            ", ".join(info.required_fields),
+            info.description,
+        )
     console.print(table)
-    console.print("[dim]suites: " + "; ".join(f"{k} = {', '.join(v)}" for k, v in SUITES.items()) + "[/dim]")
+    console.print(
+        "[dim]suites: " + "; ".join(f"{k} = {', '.join(v)}" for k, v in SUITES.items()) + "[/dim]"
+    )
 
 
 @app.command()
 def serve(
     host: Annotated[str, typer.Option("--host", help="Bind address.")] = "127.0.0.1",
     port: Annotated[int, typer.Option("--port", help="Port.")] = 8000,
-    reload: Annotated[bool, typer.Option("--reload", help="Auto-reload on code changes (development).")] = False,
+    reload: Annotated[
+        bool, typer.Option("--reload", help="Auto-reload on code changes (development).")
+    ] = False,
 ) -> None:
     """Start the local API and dashboard."""
     import uvicorn
@@ -791,13 +1007,25 @@ def serve(
     settings = state.settings()
     if host not in ("127.0.0.1", "localhost", "::1") and settings.api_token is None:
         err_console.print(
-            "[yellow]warning:[/yellow] binding to a non-local address without EVALCASCADE_API_TOKEN — "
+            "[yellow]warning:[/yellow] binding to a non-local address without "
+            "EVALCASCADE_API_TOKEN — "
             "anyone who can reach this port can run evaluations with your API keys."
         )
     dash = find_dashboard()
-    console.print(f"EvalCascade API   http://{host}:{port}/api  (OpenAPI docs: http://{host}:{port}/docs)")
-    console.print(f"Dashboard         {'http://' + host + ':' + str(port) + '/' if dash else 'not built (API only)'}")
-    uvicorn.run("evalcascade.api.app:create_app", factory=True, host=host, port=port, reload=reload, log_level="info")
+    console.print(
+        f"EvalCascade API   http://{host}:{port}/api  (OpenAPI docs: http://{host}:{port}/docs)"
+    )
+    console.print(
+        f"Dashboard         {f'http://{host}:{port}/' if dash else 'not built (API only)'}"
+    )
+    uvicorn.run(
+        "evalcascade.api.app:create_app",
+        factory=True,
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )
 
 
 def main() -> None:
@@ -805,10 +1033,8 @@ def main() -> None:
     for stream in (sys.stdout, sys.stderr):
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:
-            try:
+            with contextlib.suppress(ValueError, OSError):  # exotic streams
                 reconfigure(encoding="utf-8", errors="replace")
-            except (ValueError, OSError):  # pragma: no cover - exotic streams
-                pass
     app()
 
 

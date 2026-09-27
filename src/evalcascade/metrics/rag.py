@@ -57,7 +57,9 @@ class Groundedness(Metric):
             request, max_passages=self.max_passages, max_chars=self.max_passage_chars
         )
         if self.granularity == "sentence":
-            sentences = split_sentences(request.output or "")[: self.max_sentences] or [request.output or ""]
+            sentences = split_sentences(request.output or "")[: self.max_sentences] or [
+                request.output or ""
+            ]
             state["claims"] = {f"s{i + 1}": strip_citations(s) for i, s in enumerate(sentences)}
             questions = [
                 BinaryQuestion(
@@ -86,7 +88,8 @@ class Groundedness(Metric):
                         "the information is unavailable."
                     ),
                     levels=[
-                        "Ungrounded: the main claims are contradicted by or absent from the context.",
+                        "Ungrounded: the main claims are contradicted by or absent from the "
+                        "context.",
                         "Weakly grounded: some claims are supported, but important claims are "
                         "unsupported or contradicted.",
                         "Mostly grounded: nearly all claims are supported; a minor detail goes "
@@ -107,7 +110,7 @@ class Groundedness(Metric):
             {"sentence": truncate(s, 200), "supported": round(answers[f"s{i + 1}"].score, 4)}
             for i, s in enumerate(sentences)
         ]
-        unsupported = [p["sentence"] for p in per if float(p["supported"] or 0) < 0.5]  # type: ignore[arg-type]
+        unsupported = [p["sentence"] for p in per if float(p["supported"] or 0) < 0.5]
         return base.model_copy(update={"details": {"sentences": per, "unsupported": unsupported}})
 
 
@@ -130,7 +133,9 @@ class ContextRelevance(Metric):
     max_passage_chars: int = Field(default=2000, ge=200)
 
     def rubric(self, request: EvaluationRequest) -> Rubric:
-        passages = context_state(request, max_passages=self.max_passages, max_chars=self.max_passage_chars)
+        passages = context_state(
+            request, max_passages=self.max_passages, max_chars=self.max_passage_chars
+        )
         state: dict[str, Any] = {
             "user_input": truncate(request.input, 6000),
             "passages": {f"p{i + 1}": p for i, p in enumerate(passages)},
@@ -141,16 +146,22 @@ class ContextRelevance(Metric):
                 instructions=(
                     f"Does `passages.p{i + 1}` contain information that helps answer `user_input`?"
                 ),
-                true="Relevant: the passage contains information useful for answering the question.",
+                true="Relevant: the passage contains information useful for answering the "
+                "question.",
                 false="Irrelevant: the passage is off-topic or only superficially related.",
             )
             for i in range(len(passages))
         ]
-        return Rubric(questions=questions, state=state, aux={"total_passages": len(request.context)})
+        return Rubric(
+            questions=questions, state=state, aux={"total_passages": len(request.context)}
+        )
 
     def aggregate(self, answers: dict[str, Answer], rubric: Rubric) -> Aggregation:
         base = super().aggregate(answers, rubric)
-        per = [{"passage": i + 1, "relevance": round(answers[q.id].score, 4)} for i, q in enumerate(rubric.questions)]
+        per = [
+            {"passage": i + 1, "relevance": round(answers[q.id].score, 4)}
+            for i, q in enumerate(rubric.questions)
+        ]
         details: dict[str, Any] = {
             "passages": per,
             "relevant": sum(1 for p in per if p["relevance"] >= 0.5),
@@ -183,7 +194,8 @@ class CitationPresence(Metric):
         score = min(1.0, len(citations) / self.min_citations)
         return DeterministicOutcome(
             score=score,
-            explanation=f"Found {len(citations)} citation marker(s); {self.min_citations} required.",
+            explanation=f"Found {len(citations)} citation marker(s); "
+            f"{self.min_citations} required.",
             details={"citations": citations[:20], "count": len(citations)},
         )
 
@@ -206,7 +218,9 @@ class CitationCorrectness(Metric):
     max_citations: int = Field(default=12, ge=1, le=40)
     max_passage_chars: int = Field(default=2000, ge=200)
 
-    def _pairs(self, request: EvaluationRequest) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+    def _pairs(
+        self, request: EvaluationRequest
+    ) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
         valid: list[tuple[str, int]] = []
         invalid: list[tuple[str, int]] = []
         for sentence in split_sentences(request.output or ""):
@@ -244,7 +258,8 @@ class CitationCorrectness(Metric):
         questions = [
             BinaryQuestion(
                 id=f"c{k + 1}",
-                instructions=f"Does `citations.c{k + 1}.passage` support `citations.c{k + 1}.claim`?",
+                instructions=f"Does `citations.c{k + 1}.passage` support "
+                f"`citations.c{k + 1}.claim`?",
                 true="The cited passage supports the claim.",
                 false="The cited passage does not support the claim (irrelevant or contradicting).",
             )

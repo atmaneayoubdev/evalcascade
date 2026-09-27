@@ -81,7 +81,8 @@ def _describe_question(q: AnyQuestion) -> str:
         options = "\n".join(f"- `{k}`: {v}" for k, v in q.options.items())
         return (
             f"### Question `{q.id}` (choose exactly one option)\n{q.instructions}\n{options}\n"
-            f'Answer: {{"reasoning": string, "choice": one of {list(q.options)}, "confidence": number}}'
+            f'Answer: {{"reasoning": string, "choice": one of {list(q.options)}, '
+            '"confidence": number}'
         )
     levels = "\n".join(f"- {i}: {level}" for i, level in enumerate(q.levels))
     return (
@@ -217,7 +218,9 @@ def parse_answers(rubric: Rubric, data: dict[str, Any]) -> tuple[dict[str, Answe
             choice = str(item.get("choice", "")).strip().strip("`")
             lookup = {k.lower(): k for k in q.options}
             if choice.lower() not in lookup:
-                raise ValueError(f"choice for {q.id!r} must be one of {list(q.options)}, got {choice!r}")
+                raise ValueError(
+                    f"choice for {q.id!r} must be one of {list(q.options)}, got {choice!r}"
+                )
             answers[q.id] = answer_choice(
                 q,
                 lookup[choice.lower()],
@@ -230,9 +233,13 @@ def parse_answers(rubric: Rubric, data: dict[str, Any]) -> tuple[dict[str, Answe
             try:
                 level = float(level_raw)  # type: ignore[arg-type]
             except (TypeError, ValueError):
-                raise ValueError(f"level for {q.id!r} must be an integer, got {level_raw!r}") from None
+                raise ValueError(
+                    f"level for {q.id!r} must be an integer, got {level_raw!r}"
+                ) from None
             if not level.is_integer() or not 0 <= level <= q.max_level:
-                raise ValueError(f"level for {q.id!r} must be an integer 0-{q.max_level}, got {level_raw!r}")
+                raise ValueError(
+                    f"level for {q.id!r} must be an integer 0-{q.max_level}, got {level_raw!r}"
+                )
             answers[q.id] = answer_score(
                 q, level, confidence=conf, confidence_source="self_reported", explanation=reasoning
             )
@@ -307,7 +314,10 @@ class LLMJudge(SemanticEvaluator):
 
     def available(self) -> tuple[bool, str | None]:
         if not self.client.configured:
-            return False, f"no API key configured for the '{self.name}' judge ({self.client.base_url})"
+            return (
+                False,
+                f"no API key configured for the '{self.name}' judge ({self.client.base_url})",
+            )
         return True, None
 
     def describe(self) -> dict[str, Any]:
@@ -329,7 +339,11 @@ class LLMJudge(SemanticEvaluator):
         if self.structured_output == "json_schema":
             return {
                 "type": "json_schema",
-                "json_schema": {"name": "evalcascade_judgment", "strict": True, "schema": build_schema(rubric)},
+                "json_schema": {
+                    "name": "evalcascade_judgment",
+                    "strict": True,
+                    "schema": build_schema(rubric),
+                },
             }
         if self.structured_output == "json_object":
             return {"type": "json_object"}
@@ -351,7 +365,11 @@ class LLMJudge(SemanticEvaluator):
                 )
             except ProviderError as exc:
                 # Downgrade structured output if the endpoint rejects it.
-                if exc.status_code == 400 and self.structured_output != "prompt" and _mentions_format(exc):
+                if (
+                    exc.status_code == 400
+                    and self.structured_output != "prompt"
+                    and _mentions_format(exc)
+                ):
                     self.structured_output = (
                         "json_object" if self.structured_output == "json_schema" else "prompt"
                     )
@@ -371,7 +389,8 @@ class LLMJudge(SemanticEvaluator):
             result = await self._complete(rubric, messages)
             latency += result.latency_ms
             usage = usage + Usage(
-                input_tokens=result.usage.prompt_tokens, output_tokens=result.usage.completion_tokens
+                input_tokens=result.usage.prompt_tokens,
+                output_tokens=result.usage.completion_tokens,
             )
             call_cost, known = self._call_cost(result)
             cost += call_cost
@@ -403,7 +422,8 @@ class LLMJudge(SemanticEvaluator):
                 details={"attempts": attempt + 1, "structured_output": self.structured_output},
             )
         raise ResponseValidationError(
-            f"judge returned invalid output after {self.parse_retries + 1} attempt(s): {last_error}",
+            f"judge returned invalid output after {self.parse_retries + 1} attempt(s): "
+            f"{last_error}",
             provider=self.client.provider,
             request_id=request_id,
         )
@@ -466,7 +486,9 @@ class OpenRouterLLMJudge(LLMJudge):
         )
         kwargs = _judge_kwargs(judge)
         if judge.provider != "openrouter":  # model/pricing belong to the other endpoint
-            kwargs.update(model=DEFAULT_JUDGE_MODEL, input_cost_per_mtok=None, output_cost_per_mtok=None)
+            kwargs.update(
+                model=DEFAULT_JUDGE_MODEL, input_cost_per_mtok=None, output_cost_per_mtok=None
+            )
         return cls(client, name=name, **kwargs)
 
     def _request_extra(self) -> dict[str, Any]:

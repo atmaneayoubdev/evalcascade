@@ -45,7 +45,12 @@ from evalcascade.experiments.compare import Comparison, compare_experiments
 from evalcascade.experiments.summary import RouteCounts
 from evalcascade.metrics import SUITES, build_metrics, get_metric, metric_catalog
 from evalcascade.regression.gate import GateResult, RegressionGate
-from evalcascade.storage.store import CaseResultRow, DatasetInfo, ExperimentListItem, ExperimentStore
+from evalcascade.storage.store import (
+    CaseResultRow,
+    DatasetInfo,
+    ExperimentListItem,
+    ExperimentStore,
+)
 
 REGRESSION_DROP = 0.03
 METRIC_REGRESSION_DROP = 0.05
@@ -102,7 +107,9 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
     @app.get("/api/health", response_model=Health, tags=["system"])
     def health() -> Health:
         ok = store.ping()
-        return Health(status="ok" if ok else "degraded", version=__version__, database="ok" if ok else "error")
+        return Health(
+            status="ok" if ok else "degraded", version=__version__, database="ok" if ok else "error"
+        )
 
     @app.get("/api/config", dependencies=auth, tags=["system"])
     def config() -> dict[str, Any]:
@@ -119,7 +126,9 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
 
     # -- evaluation -------------------------------------------------------------------------------
 
-    @app.post("/api/evaluate", response_model=EvaluationResult, dependencies=auth, tags=["evaluation"])
+    @app.post(
+        "/api/evaluate", response_model=EvaluationResult, dependencies=auth, tags=["evaluation"]
+    )
     async def evaluate(body: EvaluateRequest) -> EvaluationResult:
         names: list[str] = []
         specs: list[Metric] = []
@@ -149,16 +158,28 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
 
     # -- datasets ---------------------------------------------------------------------------------
 
-    @app.get("/api/datasets", response_model=list[DatasetInfo], dependencies=auth, tags=["datasets"])
+    @app.get(
+        "/api/datasets", response_model=list[DatasetInfo], dependencies=auth, tags=["datasets"]
+    )
     def list_datasets() -> list[DatasetInfo]:
         return store.list_datasets()
 
-    @app.post("/api/datasets", response_model=DatasetInfo, status_code=201, dependencies=auth, tags=["datasets"])
+    @app.post(
+        "/api/datasets",
+        response_model=DatasetInfo,
+        status_code=201,
+        dependencies=auth,
+        tags=["datasets"],
+    )
     def upload_dataset(body: DatasetUpload) -> DatasetInfo:
         dataset = Dataset.from_records(body.cases, name=body.name, description=body.description)
-        return store.register_dataset(dataset, description=body.description, overwrite=body.overwrite)
+        return store.register_dataset(
+            dataset, description=body.description, overwrite=body.overwrite
+        )
 
-    @app.get("/api/datasets/{name}", response_model=DatasetDetail, dependencies=auth, tags=["datasets"])
+    @app.get(
+        "/api/datasets/{name}", response_model=DatasetDetail, dependencies=auth, tags=["datasets"]
+    )
     def get_dataset(
         name: str,
         limit: Annotated[int, Query(ge=1, le=500)] = 50,
@@ -167,11 +188,18 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
         info = store.get_dataset_info(name)
         dataset = store.load_dataset(name)
         cases = [c.model_dump(mode="json") for c in dataset.cases[offset : offset + limit]]
-        return DatasetDetail(dataset=info, cases=Page(total=len(dataset), limit=limit, offset=offset, items=cases))
+        return DatasetDetail(
+            dataset=info, cases=Page(total=len(dataset), limit=limit, offset=offset, items=cases)
+        )
 
     # -- experiments ------------------------------------------------------------------------------
 
-    @app.get("/api/experiments", response_model=list[ExperimentListItem], dependencies=auth, tags=["experiments"])
+    @app.get(
+        "/api/experiments",
+        response_model=list[ExperimentListItem],
+        dependencies=auth,
+        tags=["experiments"],
+    )
     def list_experiments(
         include_demo: bool = True,
         limit: Annotated[int, Query(ge=1, le=1000)] = 100,
@@ -179,7 +207,12 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
     ) -> list[ExperimentListItem]:
         return store.list_experiments(include_demo=include_demo, limit=limit, name=name)
 
-    @app.get("/api/experiments/{ref}", response_model=ExperimentDetail, dependencies=auth, tags=["experiments"])
+    @app.get(
+        "/api/experiments/{ref}",
+        response_model=ExperimentDetail,
+        dependencies=auth,
+        tags=["experiments"],
+    )
     def get_experiment(ref: str) -> ExperimentDetail:
         return ExperimentDetail.of(store.get_experiment(ref, with_results=False))
 
@@ -195,9 +228,19 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
         filter: Literal["all", "passed", "failed", "escalated"] = "all",
     ) -> dict[str, Any]:
         total, rows = store.case_rows(ref, limit=limit, offset=offset, filter=filter)
-        return {"total": total, "limit": limit, "offset": offset, "items": [r.model_dump(mode="json") for r in rows]}
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "items": [r.model_dump(mode="json") for r in rows],
+        }
 
-    @app.get("/api/experiments/{ref}/cases/{case_id}", response_model=CaseResult, dependencies=auth, tags=["experiments"])
+    @app.get(
+        "/api/experiments/{ref}/cases/{case_id}",
+        response_model=CaseResult,
+        dependencies=auth,
+        tags=["experiments"],
+    )
     def get_case(ref: str, case_id: str) -> CaseResult:
         return store.get_case(ref, case_id)
 
@@ -208,7 +251,9 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
     @app.post("/api/gate", response_model=GateResult, dependencies=auth, tags=["experiments"])
     def gate(body: GateRequest) -> GateResult:
         regression_gate = RegressionGate(**body.model_dump(exclude={"baseline", "candidate"}))
-        return regression_gate.evaluate(store.get_experiment(body.baseline), store.get_experiment(body.candidate))
+        return regression_gate.evaluate(
+            store.get_experiment(body.baseline), store.get_experiment(body.candidate)
+        )
 
     # -- overview ---------------------------------------------------------------------------------
 
@@ -221,7 +266,7 @@ def create_app(settings: Settings | None = None, store: ExperimentStore | None =
             has_demo=store.count_experiments() > store.count_experiments(include_demo=False),
         )
 
-    # -- dashboard ----------------------------------------------------------------------------------
+    # -- dashboard ------------------------------------------------------------
 
     dashboard = find_dashboard()
     if dashboard is not None:
@@ -267,7 +312,9 @@ def build_overview(items: list[ExperimentListItem], *, has_real: bool, has_demo:
         metric_drop = any(
             (pm.mean or 0) - (latest.summary.metrics[k].mean or 0) > METRIC_REGRESSION_DROP
             for k, pm in previous.summary.metrics.items()
-            if k in latest.summary.metrics and pm.mean is not None and latest.summary.metrics[k].mean is not None
+            if k in latest.summary.metrics
+            and pm.mean is not None
+            and latest.summary.metrics[k].mean is not None
         )
         regressions.append(
             RegressionIndicator(
@@ -293,7 +340,9 @@ def build_overview(items: list[ExperimentListItem], *, has_real: bool, has_demo:
         averages=OverviewAverages(
             overall_score=_mean([i.summary.overall_score for i in recent_window]),
             pass_rate=_mean([i.summary.pass_rate for i in recent_window]),
-            jev_acceptance_rate=_mean([i.summary.routing.jev_acceptance_rate for i in recent_window]),
+            jev_acceptance_rate=_mean(
+                [i.summary.routing.jev_acceptance_rate for i in recent_window]
+            ),
             escalation_rate=_mean([i.summary.routing.escalation_rate for i in recent_window]),
             latency_p50_ms=_mean([i.summary.latency_ms.p50 for i in recent_window]),
         ),

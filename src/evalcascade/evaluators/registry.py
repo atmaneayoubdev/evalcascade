@@ -47,7 +47,9 @@ class EvaluatorRegistry:
     def deterministic(self) -> DeterministicEvaluator:
         det = self._evaluators["deterministic"]
         if not isinstance(det, DeterministicEvaluator):
-            raise ConfigurationError("the 'deterministic' evaluator must be a DeterministicEvaluator")
+            raise ConfigurationError(
+                "the 'deterministic' evaluator must be a DeterministicEvaluator"
+            )
         return det
 
     def register(self, name: str, evaluator: Evaluator) -> None:

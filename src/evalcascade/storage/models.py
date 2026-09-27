@@ -48,7 +48,9 @@ class ExperimentRecord(Base):
     num_cases: Mapped[int] = mapped_column(Integer, default=0)
 
     cases: Mapped[list[CaseResultRecord]] = relationship(
-        back_populates="experiment", cascade="all, delete-orphan", order_by="CaseResultRecord.position"
+        back_populates="experiment",
+        cascade="all, delete-orphan",
+        order_by="CaseResultRecord.position",
     )
 
 

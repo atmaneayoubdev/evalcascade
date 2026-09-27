@@ -51,7 +51,10 @@ class GateResult(BaseModel):
         ]
         for c in self.checks:
             actual = "n/a" if c.actual is None else f"{c.actual:.4f}"
-            lines.append(f"| `{c.name}` | {'✅' if c.passed else '❌'} | {actual} | {c.limit:g} | {c.message} |")
+            lines.append(
+                f"| `{c.name}` | {'✅' if c.passed else '❌'} | {actual} | "
+                f"{c.limit:g} | {c.message} |"
+            )
         lines += [
             "",
             "| Metric | Baseline | Candidate | Δ |",
@@ -63,7 +66,10 @@ class GateResult(BaseModel):
             lines.append(f"| {name} | {_f(d.baseline)} | {_f(d.candidate)} | {_signed(d.delta)} |")
         if cmp.cases.top_regressions:
             lines += ["", "<details><summary>Top case regressions</summary>", ""]
-            lines += [f"- `{r.case_id}`: {_f(r.baseline)} → {_f(r.candidate)} ({_signed(r.delta)})" for r in cmp.cases.top_regressions]
+            lines += [
+                f"- `{r.case_id}`: {_f(r.baseline)} → {_f(r.candidate)} ({_signed(r.delta)})"
+                for r in cmp.cases.top_regressions
+            ]
             lines += ["", "</details>"]
         return "\n".join(lines) + "\n"
 
@@ -84,32 +90,56 @@ class RegressionGate(BaseModel):
     max_latency_increase: float | None = Field(
         default=None, ge=0.0, description="Max relative increase in p95 case latency."
     )
-    min_score: float | None = Field(default=None, ge=0.0, le=1.0, description="Floor on candidate overall.")
+    min_score: float | None = Field(
+        default=None, ge=0.0, le=1.0, description="Floor on candidate overall."
+    )
     max_escalation_rate: float | None = Field(default=None, ge=0.0, le=1.0)
     require_same_dataset: bool = False
 
     def evaluate(self, baseline: Experiment, candidate: Experiment) -> GateResult:
         comparison = compare_experiments(baseline, candidate)
-        checks: list[GateCheck] = [self._drop_check("overall_score", comparison.overall_score, self.max_quality_drop)]
+        checks: list[GateCheck] = [
+            self._drop_check("overall_score", comparison.overall_score, self.max_quality_drop)
+        ]
 
-        limits = {name: self.max_metric_drop for name in comparison.metrics if self.max_metric_drop is not None}
+        limits = {
+            name: self.max_metric_drop
+            for name in comparison.metrics
+            if self.max_metric_drop is not None
+        }
         limits.update(self.metric_thresholds)
         for name, limit in limits.items():
-            if limit is None:
-                continue
             delta = comparison.metrics.get(name)
-            if delta is None or delta.candidate is None and delta.baseline is not None:
-                checks.append(GateCheck(name=f"metric:{name}", passed=False, limit=limit, message="metric missing from candidate"))
+            if delta is None or (delta.candidate is None and delta.baseline is not None):
+                checks.append(
+                    GateCheck(
+                        name=f"metric:{name}",
+                        passed=False,
+                        limit=limit,
+                        message="metric missing from candidate",
+                    )
+                )
                 continue
             if delta.baseline is None:
-                checks.append(GateCheck(name=f"metric:{name}", passed=True, limit=limit, message="new metric (no baseline)"))
+                checks.append(
+                    GateCheck(
+                        name=f"metric:{name}",
+                        passed=True,
+                        limit=limit,
+                        message="new metric (no baseline)",
+                    )
+                )
                 continue
             checks.append(self._drop_check(f"metric:{name}", delta, limit))
 
         if self.max_cost_increase is not None:
             checks.append(self._increase_check("cost", comparison.cost_usd, self.max_cost_increase))
         if self.max_latency_increase is not None:
-            checks.append(self._increase_check("latency_p95", comparison.latency_p95_ms, self.max_latency_increase))
+            checks.append(
+                self._increase_check(
+                    "latency_p95", comparison.latency_p95_ms, self.max_latency_increase
+                )
+            )
         if self.min_score is not None:
             score = candidate.summary.overall_score
             checks.append(
@@ -129,7 +159,8 @@ class RegressionGate(BaseModel):
                     passed=rate is None or rate <= self.max_escalation_rate,
                     actual=rate,
                     limit=self.max_escalation_rate,
-                    message=f"candidate escalation rate {_f(rate)} (max {self.max_escalation_rate:g})",
+                    message=f"candidate escalation rate {_f(rate)} "
+                    f"(max {self.max_escalation_rate:g})",
                 )
             )
         if self.require_same_dataset:
@@ -138,16 +169,25 @@ class RegressionGate(BaseModel):
                     name="dataset",
                     passed=comparison.dataset_match,
                     limit=1,
-                    message="same dataset" if comparison.dataset_match else "baseline and candidate used different datasets",
+                    message="same dataset"
+                    if comparison.dataset_match
+                    else "baseline and candidate used different datasets",
                 )
             )
         violations = [c for c in checks if not c.passed]
-        return GateResult(passed=not violations, checks=checks, violations=violations, comparison=comparison)
+        return GateResult(
+            passed=not violations, checks=checks, violations=violations, comparison=comparison
+        )
 
     @staticmethod
     def _drop_check(name: str, delta: Delta, limit: float) -> GateCheck:
         if delta.baseline is None or delta.candidate is None:
-            return GateCheck(name=name, passed=False, limit=limit, message="score unavailable in baseline or candidate")
+            return GateCheck(
+                name=name,
+                passed=False,
+                limit=limit,
+                message="score unavailable in baseline or candidate",
+            )
         drop = delta.baseline - delta.candidate
         passed = drop <= limit + 1e-12
         return GateCheck(
@@ -155,7 +195,8 @@ class RegressionGate(BaseModel):
             passed=passed,
             actual=drop,
             limit=limit,
-            message=f"{_f(delta.baseline)} -> {_f(delta.candidate)} (drop {drop:+.4f}, max {limit:g})",
+            message=f"{_f(delta.baseline)} -> {_f(delta.candidate)} "
+            f"(drop {drop:+.4f}, max {limit:g})",
         )
 
     @staticmethod
@@ -173,7 +214,8 @@ class RegressionGate(BaseModel):
             passed=passed,
             actual=rel,
             limit=limit,
-            message=f"{delta.baseline:.6g} -> {delta.candidate:.6g} ({'n/a' if rel is None else f'{rel:+.1%}'}, max +{limit:.0%})",
+            message=f"{delta.baseline:.6g} -> {delta.candidate:.6g} "
+            f"({'n/a' if rel is None else f'{rel:+.1%}'}, max +{limit:.0%})",
         )
 
 

@@ -99,6 +99,7 @@ class GateRequest(BaseModel):
 class TrendPoint(BaseModel):
     id: str
     name: str
+    dataset_name: str | None = None
     created_at: datetime
     overall_score: float | None
     pass_rate: float | None
@@ -130,6 +131,7 @@ class OverviewAverages(BaseModel):
     jev_acceptance_rate: float | None
     escalation_rate: float | None
     latency_p50_ms: float | None
+    latency_mean_ms: float | None = None
 
 
 class Overview(BaseModel):

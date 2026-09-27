@@ -64,6 +64,7 @@ class MetricSummary(BaseModel):
     metric: str
     display_name: str
     category: MetricCategory
+    threshold: float | None = None
     mean: float | None = None
     std: float | None = None
     min: float | None = None
@@ -184,6 +185,7 @@ def summarize(results: Sequence[EvaluationResult]) -> ExperimentSummary:
             metric=key,
             display_name=first.display_name,
             category=first.category,
+            threshold=first.threshold,
             mean=statistics.fmean(scores) if scores else None,
             std=statistics.pstdev(scores) if len(scores) > 1 else (0.0 if scores else None),
             min=min(scores) if scores else None,

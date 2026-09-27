@@ -191,6 +191,7 @@ export interface MetricSummary {
   metric: string;
   display_name: string;
   category: MetricCategory;
+  threshold: number | null; // pass threshold used by this metric
   mean: number | null;
   std: number | null;
   min: number | null;
@@ -354,6 +355,7 @@ export interface GateResult {
 export interface TrendPoint {
   id: string;
   name: string;
+  dataset_name: string | null;
   created_at: string;
   overall_score: number | null;
   pass_rate: number | null;
@@ -383,6 +385,7 @@ export interface Overview {
     jev_acceptance_rate: number | null;
     escalation_rate: number | null;
     latency_p50_ms: number | null;
+    latency_mean_ms: number | null;
   };
   routing: RouteCounts;
   recent: ExperimentListItem[]; // newest first, up to 10

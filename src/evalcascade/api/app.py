@@ -345,6 +345,7 @@ def build_overview(items: list[ExperimentListItem], *, has_real: bool, has_demo:
             ),
             escalation_rate=_mean([i.summary.routing.escalation_rate for i in recent_window]),
             latency_p50_ms=_mean([i.summary.latency_ms.p50 for i in recent_window]),
+            latency_mean_ms=_mean([i.summary.latency_ms.mean for i in recent_window]),
         ),
         routing=routing,
         recent=items[:10],
@@ -352,6 +353,7 @@ def build_overview(items: list[ExperimentListItem], *, has_real: bool, has_demo:
             TrendPoint(
                 id=i.id,
                 name=i.name,
+                dataset_name=i.dataset_name,
                 created_at=i.created_at,
                 overall_score=i.summary.overall_score,
                 pass_rate=i.summary.pass_rate,

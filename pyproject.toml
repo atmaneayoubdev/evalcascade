@@ -73,6 +73,8 @@ artifacts = ["src/evalcascade/dashboard_dist/**"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/evalcascade", "README.md", "LICENSE", "CHANGELOG.md", "pyproject.toml"]
+# keep the (git-ignored) dashboard bundle when the wheel is built from the sdist
+artifacts = ["src/evalcascade/dashboard_dist/**"]
 
 # ---------------------------------------------------------------------------
 # Tooling

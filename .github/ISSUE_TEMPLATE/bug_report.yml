@@ -1,0 +1,90 @@
+name: Bug report
+description: Something in EvalCascade does not work as documented.
+title: "bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        **Never paste API keys, tokens or the contents of your `.env` file.** For security
+        vulnerabilities use [private vulnerability reporting](https://github.com/atmaneayoubdev/evalcascade/security/advisories/new)
+        instead of this form.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands, code or dataset rows that reproduce the problem.
+      placeholder: |
+        1. evalcascade init
+        2. evalcascade run sample:rag_qa --suite rag --policy deterministic
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Error messages, tracebacks or `--json` output. Remove anything sensitive first.
+      render: shell
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - CLI
+        - Python API
+        - Metrics
+        - Jev evaluator (OpenRouter Decisions API)
+        - LLM judge
+        - Datasets
+        - Experiments / comparison / regression gate
+        - Local API (evalcascade serve)
+        - Dashboard (web/)
+        - Docker
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: EvalCascade version
+      description: Output of `evalcascade --version`.
+      placeholder: evalcascade 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        OS, Python version and how you installed EvalCascade (pip, uv, Docker, from source).
+        The output of `evalcascade doctor` is very helpful. It never prints key values.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Relevant parts of `evalcascade.toml` and the `EVALCASCADE_*` variables you set, with secrets removed.
+      render: toml
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I removed all API keys, tokens and private data from this report.
+          required: true

@@ -1,0 +1,74 @@
+# EvalCascade regression gate for GitHub Actions.
+#
+# Copy this file to .github/workflows/evalcascade-gate.yml in your repository, then:
+#   1. Add an OPENROUTER_API_KEY repository secret (Settings -> Secrets and variables -> Actions).
+#   2. Commit a baseline export to evals/baseline.json (see examples/ci/README.md).
+#   3. Point EVAL_DATASET below at your JSONL dataset.
+#
+# Each run evaluates the dataset, compares the result with the committed baseline, writes a
+# Markdown report to the job summary, and fails the job (exit code 1) on a regression.
+name: EvalCascade gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evalcascade-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Evaluate and gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Pull requests from forks get no secrets, so skip them rather than fail.
+    # Never switch this workflow to `pull_request_target`: that would expose your API key to
+    # untrusted code.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      EVAL_DATASET: datasets/my_dataset.jsonl # <- your dataset (JSONL)
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      EVALCASCADE_DISABLE_DOTENV: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+
+      - name: Install EvalCascade
+        # Pin a version so CI runs stay reproducible. Once EvalCascade is on PyPI you can use:
+        #   uv tool install "evalcascade==0.1.0"
+        run: |
+          uv tool install "evalcascade @ git+https://github.com/atmaneayoubdev/evalcascade@v0.1.0"
+          echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"
+
+      - name: Evaluate the candidate
+        run: >-
+          evalcascade run "$EVAL_DATASET"
+          --suite rag
+          --name candidate
+          --tag "sha-${GITHUB_SHA::7}"
+          -o candidate.json
+
+      - name: Regression gate
+        run: >-
+          evalcascade gate
+          --baseline evals/baseline.json
+          --candidate candidate.json
+          --max-quality-drop 0.03
+          --metric-threshold groundedness=0.05
+          --summary-file "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the candidate experiment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: evalcascade-candidate
+          path: candidate.json
+          if-no-files-found: warn
+          retention-days: 30

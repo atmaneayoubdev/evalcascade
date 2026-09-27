@@ -1,0 +1,217 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # CI never reads a .env file and needs no secrets: every job runs offline.
+  EVALCASCADE_DISABLE_DOTENV: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  lint:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Ruff (lint)
+        run: uv run ruff check --output-format=github .
+      - name: Ruff (format)
+        run: uv run ruff format --check .
+      - name: Mypy (strict)
+        run: uv run mypy
+
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Run tests (offline; live tests are skipped without EVALCASCADE_LIVE_TESTS=1)
+        run: uv run pytest --cov=evalcascade --cov-report=xml --cov-report=term
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Bundle the dashboard into the package
+        run: uv run --no-project python scripts/build_dashboard.py
+      # The wheel is built straight from the source tree: the bundled dashboard is
+      # git-ignored and would be dropped by a wheel built from the sdist.
+      - name: Build sdist and wheel
+        run: |
+          uv build --sdist
+          uv build --wheel
+      - name: List wheel contents
+        run: uv run --no-project python -m zipfile -l dist/*.whl | tee wheel-contents.txt
+      - name: Check that the wheel ships the dashboard
+        run: |
+          if ! grep -q "evalcascade/dashboard_dist/index.html" wheel-contents.txt; then
+            echo "::error::the wheel does not contain the dashboard bundle"
+            exit 1
+          fi
+      - name: Check package metadata
+        run: uvx twine check --strict dist/*
+      - name: Smoke test (project environment)
+        run: uv run evalcascade --help
+      - name: Smoke test (installed wheel)
+        run: uv run --isolated --no-project --with dist/*.whl evalcascade --version
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  web:
+    name: Dashboard (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build (static export)
+        run: npm run build
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image (not pushed)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: evalcascade:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test the container
+        run: |
+          docker run -d --name evalcascade -p 127.0.0.1:8000:8000 evalcascade:ci
+          status=starting
+          for _ in $(seq 1 45); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' evalcascade)
+            [ "$status" = "healthy" ] && break
+            sleep 2
+          done
+          docker logs evalcascade
+          if [ "$status" != "healthy" ]; then
+            echo "::error::container did not become healthy (status: $status)"
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:8000/api/health
+          curl -fsS -o /dev/null http://127.0.0.1:8000/
+          if [ "$(docker exec evalcascade id -u)" = "0" ]; then
+            echo "::error::the container runs as root"
+            exit 1
+          fi
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
+
+  gate-example:
+    name: Regression gate self-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Gate passes (baseline vs candidate)
+        run: >-
+          uv run evalcascade gate
+          --baseline examples/ci/baseline.json
+          --candidate examples/ci/candidate.json
+          --max-quality-drop 0.03
+          --summary-file "$GITHUB_STEP_SUMMARY"
+      - name: Gate fails on a regressed candidate (expects exit code 1)
+        run: |
+          set +e
+          uv run evalcascade gate \
+            --baseline examples/ci/baseline.json \
+            --candidate examples/ci/regressed.json \
+            --max-quality-drop 0.03 \
+            --summary-file regressed-summary.md
+          code=$?
+          set -e
+          {
+            echo "### Self-test: regressed candidate (this gate is expected to fail)"
+            echo
+            cat regressed-summary.md 2>/dev/null || echo "_The gate produced no report._"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -ne 1 ]; then
+            echo "::error::expected the regression gate to exit with 1, got $code"
+            exit 1
+          fi
+          echo "The regression gate correctly failed with exit code 1."

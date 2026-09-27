@@ -133,10 +133,16 @@ class EvaluationRequest(BaseModel):
         return value
 
     def has(self, field: str) -> bool:
-        """Whether a request field is present and non-empty."""
+        """Whether a request field is present and non-empty.
+
+        An empty ``output`` string counts as present: the system answered with nothing, which
+        metrics should score (as 0) rather than skip.
+        """
         value = getattr(self, field, None)
         if value is None:
             return False
+        if field == "output":
+            return True
         if isinstance(value, str | list | dict):
             return len(value) > 0
         if isinstance(value, AgentTrace):

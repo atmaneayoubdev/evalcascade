@@ -339,6 +339,9 @@ export interface GateRequest {
   max_cost_increase?: number | null; // relative, e.g. 0.2 = +20%
   max_latency_increase?: number | null; // relative, on p95
   min_score?: number | null; // absolute floor on candidate overall score
+  max_metric_drop?: number | null; // default max drop for every metric not in metric_thresholds
+  max_escalation_rate?: number | null; // ceiling on the candidate's escalation rate
+  require_same_dataset?: boolean; // fail when datasets differ (default false)
 }
 
 export interface GateResult {
@@ -445,18 +448,24 @@ export interface Health {
 
 /**
  * Endpoint index
- *   GET  /api/health                              -> Health
- *   GET  /api/config                              -> ConfigSummary
- *   GET  /api/overview?include_demo=bool          -> Overview
- *   GET  /api/metrics                             -> MetricInfo[]
- *   POST /api/evaluate                            -> EvaluationResult
- *   GET  /api/datasets                            -> DatasetInfo[]
- *   GET  /api/datasets/{name}?limit&offset        -> DatasetDetail
- *   GET  /api/experiments?include_demo&limit      -> ExperimentListItem[]
- *   GET  /api/experiments/{id}                    -> Experiment
- *   GET  /api/experiments/{id}/cases?limit&offset&filter=all|passed|failed|escalated  -> Page<CaseResultRow>
- *   GET  /api/experiments/{id}/cases/{case_id}    -> CaseResult
- *   GET  /api/compare?baseline=&candidate=        -> Comparison
- *   POST /api/gate                                -> GateResult
+ *   GET    /api/health                              -> Health            (always public)
+ *   GET    /api/config                              -> ConfigSummary
+ *   GET    /api/overview?include_demo=bool          -> Overview
+ *   GET    /api/metrics                             -> MetricInfo[]      (always public)
+ *   GET    /api/metrics/suites                      -> Record<string, string[]>
+ *   POST   /api/evaluate                            -> EvaluationResult
+ *   GET    /api/datasets                            -> DatasetInfo[]
+ *   POST   /api/datasets  {name, description?, cases, overwrite?}  -> DatasetInfo (201)
+ *   GET    /api/datasets/{name}?limit&offset        -> DatasetDetail
+ *   GET    /api/experiments?include_demo&limit&name -> ExperimentListItem[]
+ *   GET    /api/experiments/{ref}                   -> Experiment
+ *   DELETE /api/experiments/{ref}                   -> { deleted: string }
+ *   GET    /api/experiments/{ref}/cases?limit(<=500)&offset&filter=all|passed|failed|escalated -> Page<CaseResultRow>
+ *   GET    /api/experiments/{ref}/cases/{case_id}   -> CaseResult
+ *   GET    /api/compare?baseline=&candidate=        -> Comparison
+ *   POST   /api/gate                                -> GateResult
+ * {ref} accepts an id, unique id prefix, experiment name (latest with that name), latest or latest~N.
+ * Auth: when the server sets EVALCASCADE_API_TOKEN, every route except the two public ones
+ * requires `Authorization: Bearer <token>` and returns 401 otherwise.
  * Errors: { detail: string } with 4xx/5xx status.
  */

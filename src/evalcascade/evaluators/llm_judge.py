@@ -275,7 +275,9 @@ class LLMJudge(SemanticEvaluator):
         output_cost_per_mtok: float | None = None,
         timeout_s: float = 60.0,
         max_retries: int = 3,
+        require_api_key: bool = True,
     ) -> None:
+        self.require_api_key = require_api_key
         if client is None:
             if base_url is None:
                 raise ValueError("either client or base_url is required")
@@ -313,7 +315,7 @@ class LLMJudge(SemanticEvaluator):
         return self.model
 
     def available(self) -> tuple[bool, str | None]:
-        if not self.client.configured:
+        if not self.client.configured and self.require_api_key:
             return (
                 False,
                 f"no API key configured for the '{self.name}' judge ({self.client.base_url})",
@@ -474,10 +476,14 @@ class OpenRouterLLMJudge(LLMJudge):
     @classmethod
     def from_settings(cls, settings: Settings, *, name: str = "openrouter") -> OpenRouterLLMJudge:
         judge = settings.judge
-        base_url = judge.base_url if judge.provider == "openrouter" else f"{OPENROUTER_API_BASE}/v1"
+        # The configured judge is OpenRouter itself (JudgeSettings guarantees an openrouter.ai
+        # host in that case); otherwise its URL, key, model and extras belong to another server.
+        own = judge.provider == "openrouter"
         client = ChatCompletionsClient(
-            base_url=base_url,
-            api_key=judge.api_key or settings.openrouter_api_key,
+            base_url=judge.base_url if own else f"{OPENROUTER_API_BASE}/v1",
+            api_key=(judge.api_key or settings.openrouter_api_key)
+            if own
+            else settings.openrouter_api_key,
             provider="openrouter",
             timeout_s=judge.timeout_s,
             max_retries=judge.max_retries,
@@ -485,9 +491,13 @@ class OpenRouterLLMJudge(LLMJudge):
             headers={"HTTP-Referer": settings.app_url, "X-Title": settings.app_title},
         )
         kwargs = _judge_kwargs(judge)
-        if judge.provider != "openrouter":  # model/pricing belong to the other endpoint
+        if not own:
             kwargs.update(
-                model=DEFAULT_JUDGE_MODEL, input_cost_per_mtok=None, output_cost_per_mtok=None
+                model=DEFAULT_JUDGE_MODEL,
+                extra_body={},
+                input_cost_per_mtok=None,
+                output_cost_per_mtok=None,
+                require_api_key=True,
             )
         return cls(client, name=name, **kwargs)
 
@@ -512,6 +522,7 @@ def _judge_kwargs(judge: JudgeSettings) -> dict[str, Any]:
         "input_cost_per_mtok": judge.input_cost_per_mtok,
         "output_cost_per_mtok": judge.output_cost_per_mtok,
         "timeout_s": judge.timeout_s,
+        "require_api_key": judge.require_api_key,
     }
 
 

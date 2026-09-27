@@ -20,7 +20,7 @@ from rich.text import Text
 
 from evalcascade._version import __version__
 from evalcascade.cli import render
-from evalcascade.config import CONFIG_FILENAME, Settings
+from evalcascade.config import CONFIG_FILENAME, Settings, redact_database_url
 from evalcascade.core.policy import EvaluationPolicy
 from evalcascade.core.results import CaseResult
 from evalcascade.errors import EvalCascadeError
@@ -165,7 +165,7 @@ def init(
             Dataset.from_jsonl(target, name=name), copy_to_workspace=False, overwrite=True
         )
     console.print(f"[green]added[/green] sample datasets to {data_dir}")
-    console.print(f"[green]database[/green] {settings.resolved_database_url}")
+    console.print(f"[green]database[/green] {redact_database_url(settings.resolved_database_url)}")
 
     gitignore = directory / ".gitignore"
     lines = gitignore.read_text(encoding="utf-8").splitlines() if gitignore.exists() else []
@@ -256,7 +256,8 @@ def doctor(
             (
                 "ok" if ok else "fail",
                 "Database",
-                f"{settings.resolved_database_url} ({n_exp} experiments, {n_ds} datasets)",
+                f"{redact_database_url(settings.resolved_database_url)} "
+                f"({n_exp} experiments, {n_ds} datasets)",
             )
         )
         hard_fail |= not ok
@@ -322,7 +323,7 @@ def _doctor_table(rows: list[tuple[str, str, str]]) -> None:
     table.add_column("Details", overflow="fold")
     for status, check, details in rows:
         icon, color = style[status]
-        table.add_row(Text(icon, style=color), check, details)
+        table.add_row(Text(icon, style=color), check, Text(details))
     console.print(table)
 
 
@@ -665,13 +666,15 @@ def datasets_create(
     target = output or Path("datasets") / f"{name}.jsonl"
     if target.exists():
         raise fail(f"{target} already exists")
+    store = state.store()
+    if any(d.name == name for d in store.list_datasets()):
+        raise fail(f"dataset {name!r} is already registered")  # check before writing anything
     ds = Dataset.from_records(TEMPLATES[template], name=name)
     ds.to_jsonl(target)
     try:
-        state.store().register_dataset(
-            Dataset.from_jsonl(target, name=name), copy_to_workspace=False
-        )
+        store.register_dataset(Dataset.from_jsonl(target, name=name), copy_to_workspace=False)
     except EvalCascadeError as exc:
+        target.unlink(missing_ok=True)
         raise fail(str(exc)) from None
     console.print(
         f"[green]created[/green] {target} ({len(ds)} example case(s)) — edit it, then: "
@@ -705,13 +708,14 @@ def datasets_show(
     table.add_column("trace", justify="right")
     table.add_column("expected", overflow="fold", max_width=30)
     for case in ds.cases[:limit]:
-        table.add_row(
-            case.id,
-            (case.input or "")[:160],
-            (case.output or "")[:160],
+        expected = json.dumps(case.expected.model_dump(exclude_none=True)) if case.expected else "—"
+        table.add_row(  # Text(): dataset content is data, never Rich markup
+            Text(case.id),
+            Text((case.input or "")[:160]),
+            Text((case.output or "")[:160]),
             str(len(case.context)),
             str(len(case.trace.steps)) if case.trace else "—",
-            json.dumps(case.expected.model_dump(exclude_none=True)) if case.expected else "—",
+            Text(expected),
         )
     console.print(table)
 
@@ -794,7 +798,7 @@ def experiments_show(
         table.add_column("cost", justify="right")
         for r in experiment.results:
             table.add_row(
-                r.case_id or "—",
+                Text(r.case_id or "—"),
                 render.fmt_score(r.overall_score),
                 render.pass_text(r.passed),
                 str(r.escalations),
@@ -944,6 +948,8 @@ def gate(
         result = regression_gate.evaluate(_load_experiment(baseline), _load_experiment(candidate))
     except (EvalCascadeError, ValueError) as exc:
         raise fail(str(exc)) from None
+    if fmt not in ("text", "json", "markdown"):
+        raise fail(f"--format must be text, json or markdown, got {fmt!r}")
     if fmt == "json":
         console.print_json(result.model_dump_json())
     elif fmt == "markdown":
@@ -981,7 +987,7 @@ def metrics_cmd() -> None:
             ", ".join(info.primitives) or "—",
             info.deterministic,
             ", ".join(info.required_fields),
-            info.description,
+            Text(info.description),
         )
     console.print(table)
     console.print(

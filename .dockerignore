@@ -1,0 +1,53 @@
+# Secrets: never send them to the Docker daemon, let alone into an image.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# VCS, virtualenvs, caches
+.git
+.gitignore
+.gitattributes
+.venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+build
+dist
+*.egg-info
+
+# Local EvalCascade workspace (SQLite database, imported datasets)
+.evalcascade
+**/*.db
+**/*.db-journal
+
+# Node / Next.js build output; the image builds web/ from source
+**/node_modules
+web/.next
+web/out
+web/*.tsbuildinfo
+# A locally bundled dashboard; the image uses the one it builds itself
+src/evalcascade/dashboard_dist
+
+# Not needed to build or run the image
+tasks
+tests
+benchmarks
+docs
+examples
+scripts
+.github
+.playwright-mcp
+.pre-commit-config.yaml
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+Dockerfile
+docker-compose.yml
+.dockerignore

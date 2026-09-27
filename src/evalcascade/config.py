@@ -17,8 +17,9 @@ import tomllib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from evalcascade.core.policy import EvaluationPolicy
 from evalcascade.errors import ConfigurationError
@@ -78,6 +79,17 @@ class JudgeSettings(BaseModel):
         description="USD per 1M input tokens, used when the provider reports no cost.",
     )
     output_cost_per_mtok: float | None = Field(default=None, ge=0)
+    require_api_key: bool = Field(
+        default=True, description="Set to false for OpenAI-compatible servers without auth."
+    )
+
+    @model_validator(mode="after")
+    def _infer_provider(self) -> JudgeSettings:
+        # Never treat a non-OpenRouter endpoint as OpenRouter: that would send the
+        # OpenRouter key to a third-party host.
+        if self.provider == "openrouter" and not is_openrouter_url(self.base_url):
+            self.provider = "openai_compatible"
+        return self
 
 
 class Settings(BaseModel):
@@ -113,9 +125,10 @@ class Settings(BaseModel):
         return f"sqlite:///{(self.home / 'evalcascade.db').resolve().as_posix()}"
 
     def judge_api_key(self) -> SecretStr | None:
+        """The key sent to the judge endpoint. The OpenRouter key only ever goes to OpenRouter."""
         if self.judge.api_key is not None:
             return self.judge.api_key
-        if self.judge.provider == "openrouter":
+        if self.judge.provider == "openrouter" and is_openrouter_url(self.judge.base_url):
             return self.openrouter_api_key
         return None
 
@@ -179,6 +192,16 @@ class Settings(BaseModel):
             return cls.model_validate(data)
         except ValueError as exc:
             raise ConfigurationError(f"invalid configuration: {exc}") from exc
+
+
+def is_openrouter_url(url: str) -> bool:
+    """Whether ``url`` points at OpenRouter (https, host openrouter.ai or a subdomain)."""
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    host = (parsed.hostname or "").lower()
+    return parsed.scheme == "https" and (host == "openrouter.ai" or host.endswith(".openrouter.ai"))
 
 
 def redact_database_url(url: str) -> str:
@@ -272,6 +295,7 @@ _ENV_MAP: dict[str, tuple[tuple[str, ...], type]] = {
     "EVALCASCADE_JUDGE_EXTRA_BODY": (("judge", "extra_body"), dict),
     "EVALCASCADE_JUDGE_INPUT_COST_PER_MTOK": (("judge", "input_cost_per_mtok"), float),
     "EVALCASCADE_JUDGE_OUTPUT_COST_PER_MTOK": (("judge", "output_cost_per_mtok"), float),
+    "EVALCASCADE_JUDGE_REQUIRE_API_KEY": (("judge", "require_api_key"), bool),
     "EVALCASCADE_PRIMARY": (("policy", "primary"), str),
     "EVALCASCADE_FALLBACK": (("policy", "fallback"), str),
     "EVALCASCADE_ESCALATE_BELOW": (("policy", "escalate_below"), float),

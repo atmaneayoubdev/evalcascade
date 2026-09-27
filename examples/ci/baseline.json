@@ -1,0 +1,1722 @@
+{
+  "id": "c4b0519c4561",
+  "name": "baseline",
+  "created_at": "2026-09-27T19:04:00.993015Z",
+  "dataset": {
+    "name": "rag_qa",
+    "hash": "56caeb56d6e862f9",
+    "size": 12,
+    "path": "C:\\Users\\atman\\AiProjects\\EvalForge\\src\\evalcascade\\datasets\\data\\rag_qa.jsonl"
+  },
+  "metrics": [
+    {
+      "name": "citation_presence",
+      "metric": "citation_presence",
+      "params": {
+        "weight": 1.0,
+        "min_citations": 1
+      }
+    },
+    {
+      "name": "citation_correctness",
+      "metric": "citation_correctness",
+      "params": {
+        "weight": 1.0,
+        "max_citations": 12,
+        "max_passage_chars": 2000
+      }
+    },
+    {
+      "name": "safety",
+      "metric": "safety",
+      "params": {
+        "weight": 1.0
+      }
+    }
+  ],
+  "policy": {
+    "deterministic_first": true,
+    "primary": null,
+    "fallback": null,
+    "escalate_below": 0.82,
+    "escalate_on_error": true,
+    "route_reasoning_to_fallback": false,
+    "overrides": {}
+  },
+  "evaluators": {
+    "deterministic": {
+      "name": "deterministic",
+      "kind": "deterministic"
+    }
+  },
+  "summary": {
+    "num_cases": 12,
+    "num_evaluations": 13,
+    "overall_score": 0.7916666666666666,
+    "pass_rate": 0.75,
+    "metrics": {
+      "citation_presence": {
+        "metric": "citation_presence",
+        "display_name": "Citation Presence",
+        "category": "rag",
+        "threshold": 1.0,
+        "mean": 0.8333333333333334,
+        "std": 0.37267799624996495,
+        "min": 0.0,
+        "max": 1.0,
+        "pass_rate": 0.8333333333333334,
+        "count": 12,
+        "skipped": 0,
+        "errors": 0,
+        "histogram": [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          10
+        ],
+        "routes": {
+          "deterministic": 12,
+          "jev": 0,
+          "llm": 0,
+          "jev_to_llm": 0,
+          "none": 0
+        },
+        "escalation_rate": null,
+        "mean_latency_ms": 0.008224999874073546,
+        "cost_usd": 0.0
+      },
+      "citation_correctness": {
+        "metric": "citation_correctness",
+        "display_name": "Citation Correctness",
+        "category": "rag",
+        "threshold": 0.6,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "pass_rate": 0.0,
+        "count": 1,
+        "skipped": 11,
+        "errors": 0,
+        "histogram": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "routes": {
+          "deterministic": 1,
+          "jev": 0,
+          "llm": 0,
+          "jev_to_llm": 0,
+          "none": 11
+        },
+        "escalation_rate": null,
+        "mean_latency_ms": 0.01340000017080456,
+        "cost_usd": 0.0
+      },
+      "safety": {
+        "metric": "safety",
+        "display_name": "Safety",
+        "category": "general",
+        "threshold": 0.5,
+        "mean": null,
+        "std": null,
+        "min": null,
+        "max": null,
+        "pass_rate": null,
+        "count": 0,
+        "skipped": 12,
+        "errors": 0,
+        "histogram": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "routes": {
+          "deterministic": 0,
+          "jev": 0,
+          "llm": 0,
+          "jev_to_llm": 0,
+          "none": 12
+        },
+        "escalation_rate": null,
+        "mean_latency_ms": null,
+        "cost_usd": 0.0
+      }
+    },
+    "cost_usd": 0.0,
+    "cost_per_case_usd": 0.0,
+    "cost_complete": true,
+    "latency_ms": {
+      "mean": 0.18445000023348257,
+      "p50": 0.09869999939837726,
+      "p95": 0.5843600002663145,
+      "max": 1.087500000721775
+    },
+    "routing": {
+      "total": 13,
+      "deterministic": 13,
+      "jev_attempts": 0,
+      "jev_accepted": 0,
+      "escalated": 0,
+      "llm_direct": 0,
+      "skipped": 23,
+      "errors": 0,
+      "deterministic_rate": 1.0,
+      "jev_acceptance_rate": null,
+      "escalation_rate": null,
+      "llm_rate": 0.0
+    },
+    "agreement": {
+      "compared": 0,
+      "agreement_rate": null
+    },
+    "errors": 0
+  },
+  "results": [
+    {
+      "case_id": "rag-001",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 2 citation marker(s); 1 required.",
+              "latency_ms": 0.021800000467919745,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]",
+                  "[1]"
+                ],
+                "count": 2
+              }
+            }
+          ],
+          "explanation": "Found 2 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]",
+              "[1]"
+            ],
+            "count": 2
+          },
+          "latency_ms": 0.021800000467919745,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 1.087500000721775,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-001",
+        "input": "What uptime does the Business plan guarantee?",
+        "output": "The Business plan guarantees 99.95% monthly uptime [1]. If uptime drops below that, you receive service credits of 10% of the monthly fee per 0.1% below target, up to 50% [1].",
+        "context": [
+          "Acme Cloud Business plans include a 99.95% monthly uptime SLA. If uptime falls below the SLA, customers receive service credits of 10% of the monthly fee for each 0.1% below target, capped at 50%.",
+          "The Starter plan costs $29 per month and includes 2 vCPUs and 4 GB of RAM. The Business plan costs $199 per month and includes 8 vCPUs, 32 GB of RAM and priority support."
+        ],
+        "expected": {
+          "answer": "99.95% monthly uptime",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "sla",
+          "note": "faithful, cited"
+        }
+      }
+    },
+    {
+      "case_id": "rag-002",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.008600000001024455,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.008600000001024455,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.10519999887037557,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-002",
+        "input": "How long are backups kept on the Starter plan?",
+        "output": "Backups on the Starter plan are retained for 7 days [1].",
+        "context": [
+          "Automated backups run every 6 hours and are retained for 30 days on Business plans and 7 days on the Starter plan. Point-in-time restore is available only on Business plans.",
+          "The Acme office cafeteria serves coffee from 8am to 4pm on weekdays."
+        ],
+        "expected": {
+          "answer": "7 days",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "backup",
+          "note": "faithful; one irrelevant passage"
+        }
+      }
+    },
+    {
+      "case_id": "rag-003",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.006199999916134402,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.006199999916134402,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.09250000039173756,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-003",
+        "input": "Can I restore my Starter database to a specific point in time?",
+        "output": "Yes. All plans, including Starter, support point-in-time restore for the last 30 days [1].",
+        "context": [
+          "Automated backups run every 6 hours and are retained for 30 days on Business plans and 7 days on the Starter plan. Point-in-time restore is available only on Business plans."
+        ],
+        "expected": {
+          "answer": "No, point-in-time restore is only available on Business plans.",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "backup",
+          "note": "contradicts context"
+        }
+      }
+    },
+    {
+      "case_id": "rag-004",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 2 citation marker(s); 1 required.",
+              "latency_ms": 0.006499998562503606,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]",
+                  "[2]"
+                ],
+                "count": 2
+              }
+            }
+          ],
+          "explanation": "Found 2 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]",
+              "[2]"
+            ],
+            "count": 2
+          },
+          "latency_ms": 0.006499998562503606,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.17269999989366625,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-004",
+        "input": "Which regions can I host my data in?",
+        "output": "You can choose Frankfurt, Dublin, Virginia or Singapore, and your data stays in the region you pick at signup [1]. Tokyo and São Paulo are also available on request [2].",
+        "context": [
+          "Acme Cloud operates data centers in Frankfurt (eu-central), Dublin (eu-west), Virginia (us-east) and Singapore (ap-southeast). Customer data never leaves the region selected at signup.",
+          "Priority support responds within 1 hour, 24/7, for Business customers. Starter customers receive email support with a response target of 1 business day."
+        ],
+        "expected": null,
+        "trace": null,
+        "metadata": {
+          "topic": "regions",
+          "note": "partly fabricated, wrong citation"
+        }
+      }
+    },
+    {
+      "case_id": "rag-005",
+      "overall_score": 0.0,
+      "passed": false,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 0.0,
+          "passed": false,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 0.0,
+              "confidence": 1.0,
+              "pass_probability": 0.0,
+              "answers": {},
+              "explanation": "Found 0 citation marker(s); 1 required.",
+              "latency_ms": 0.007699998604948632,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [],
+                "count": 0
+              }
+            }
+          ],
+          "explanation": "Found 0 citation marker(s); 1 required.",
+          "details": {
+            "citations": [],
+            "count": 0
+          },
+          "latency_ms": 0.007699998604948632,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "no numeric citations like [1] found in the response"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.08310000157507602,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-005",
+        "input": "How fast does priority support respond?",
+        "output": "Business customers get priority support with a 1-hour response time, around the clock.",
+        "context": [
+          "Priority support responds within 1 hour, 24/7, for Business customers. Starter customers receive email support with a response target of 1 business day.",
+          "The Starter plan costs $29 per month and includes 2 vCPUs and 4 GB of RAM. The Business plan costs $199 per month and includes 8 vCPUs, 32 GB of RAM and priority support."
+        ],
+        "expected": {
+          "answer": "within 1 hour, 24/7",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "support",
+          "note": "faithful, no citation"
+        }
+      }
+    },
+    {
+      "case_id": "rag-006",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.00650000038149301,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.00650000038149301,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.09529999988444615,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-006",
+        "input": "Do you offer refunds if I cancel mid-month?",
+        "output": "No refunds are given for partial months; cancellation takes effect at the end of the current billing period [1].",
+        "context": [
+          "Subscriptions can be cancelled at any time from Settings > Billing. Cancellation takes effect at the end of the current billing period; there are no refunds for partial months."
+        ],
+        "expected": {
+          "answer": "No refunds for partial months",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "billing",
+          "note": "faithful"
+        }
+      }
+    },
+    {
+      "case_id": "rag-007",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.010100000508828089,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.010100000508828089,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.10819999988598283,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-007",
+        "input": "Is SSO supported with Okta?",
+        "output": "Yes — SSO with SAML 2.0 and OIDC is available on the Business plan, and SCIM provisioning works with Okta [1].",
+        "context": [
+          "Single sign-on (SSO) via SAML 2.0 and OIDC is available on the Business plan. SCIM user provisioning is supported for Okta and Azure AD.",
+          "The Acme office cafeteria serves coffee from 8am to 4pm on weekdays.",
+          "The REST API is rate limited to 600 requests per minute per API key. Exceeding the limit returns HTTP 429 with a Retry-After header."
+        ],
+        "expected": null,
+        "trace": null,
+        "metadata": {
+          "topic": "sso",
+          "note": "faithful; mixed-relevance context"
+        }
+      }
+    },
+    {
+      "case_id": "rag-008",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.00650000038149301,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.00650000038149301,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.10209999891230837,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-008",
+        "input": "Can I launch GPU instances in Frankfurt today?",
+        "output": "GPU instances are generally available in all regions, including Frankfurt, and can be launched from the console [1].",
+        "context": [
+          "GPU instances are in private preview in us-east only. Access requires a request through the account team.",
+          "Acme Cloud operates data centers in Frankfurt (eu-central), Dublin (eu-west), Virginia (us-east) and Singapore (ap-southeast). Customer data never leaves the region selected at signup."
+        ],
+        "expected": {
+          "answer": "No; GPUs are in private preview in us-east only.",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "gpu",
+          "note": "hallucinated"
+        }
+      }
+    },
+    {
+      "case_id": "rag-009",
+      "overall_score": 0.5,
+      "passed": false,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.008200000593205914,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[3]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[3]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.008200000593205914,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "ok",
+          "score": 0.0,
+          "passed": false,
+          "threshold": 0.6,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 0.0,
+              "confidence": 1.0,
+              "pass_probability": 0.0,
+              "answers": {},
+              "explanation": "All 1 citation(s) point to passages that do not exist.",
+              "latency_ms": 0.01340000017080456,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "invalid": [
+                  3
+                ],
+                "passages": 1
+              }
+            }
+          ],
+          "explanation": "All 1 citation(s) point to passages that do not exist.",
+          "details": {
+            "invalid": [
+              3
+            ],
+            "passages": 1
+          },
+          "latency_ms": 0.01340000017080456,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.14270000065153,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-009",
+        "input": "What is the API rate limit?",
+        "output": "The API allows 600 requests per minute per key [3]; beyond that you get HTTP 429 with a Retry-After header.",
+        "context": [
+          "The REST API is rate limited to 600 requests per minute per API key. Exceeding the limit returns HTTP 429 with a Retry-After header."
+        ],
+        "expected": {
+          "answer": "600 requests per minute per API key",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "api",
+          "note": "correct claim, citation index out of range"
+        }
+      }
+    },
+    {
+      "case_id": "rag-010",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.00540000110049732,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.00540000110049732,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.0825000006443588,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-010",
+        "input": "How much does the Business plan cost and what does it include?",
+        "output": "The Business plan is $199/month with 8 vCPUs, 32 GB RAM and priority support [1].",
+        "context": [
+          "The Starter plan costs $29 per month and includes 2 vCPUs and 4 GB of RAM. The Business plan costs $199 per month and includes 8 vCPUs, 32 GB of RAM and priority support.",
+          "Priority support responds within 1 hour, 24/7, for Business customers. Starter customers receive email support with a response target of 1 business day."
+        ],
+        "expected": {
+          "answer": "$199 per month; 8 vCPUs, 32 GB RAM, priority support",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "pricing",
+          "note": "faithful"
+        }
+      }
+    },
+    {
+      "case_id": "rag-011",
+      "overall_score": 0.0,
+      "passed": false,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 0.0,
+          "passed": false,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 0.0,
+              "confidence": 1.0,
+              "pass_probability": 0.0,
+              "answers": {},
+              "explanation": "Found 0 citation marker(s); 1 required.",
+              "latency_ms": 0.005399999281507917,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [],
+                "count": 0
+              }
+            }
+          ],
+          "explanation": "Found 0 citation marker(s); 1 required.",
+          "details": {
+            "citations": [],
+            "count": 0
+          },
+          "latency_ms": 0.005399999281507917,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "no numeric citations like [1] found in the response"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.06270000085351057,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-011",
+        "input": "When does the cafeteria close?",
+        "output": "I don't have information about that in the documentation provided.",
+        "context": [
+          "Acme Cloud Business plans include a 99.95% monthly uptime SLA. If uptime falls below the SLA, customers receive service credits of 10% of the monthly fee for each 0.1% below target, capped at 50%.",
+          "The REST API is rate limited to 600 requests per minute per API key. Exceeding the limit returns HTTP 429 with a Retry-After header."
+        ],
+        "expected": null,
+        "trace": null,
+        "metadata": {
+          "topic": "abstain",
+          "note": "correct abstention; irrelevant retrieval"
+        }
+      }
+    },
+    {
+      "case_id": "rag-012",
+      "overall_score": 1.0,
+      "passed": true,
+      "metrics": [
+        {
+          "metric": "citation_presence",
+          "display_name": "Citation Presence",
+          "category": "rag",
+          "status": "ok",
+          "score": 1.0,
+          "passed": true,
+          "threshold": 1.0,
+          "route": "deterministic",
+          "final_evaluator": "deterministic",
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": 1.0,
+          "escalate_below": null,
+          "judgments": [
+            {
+              "evaluator": "deterministic",
+              "evaluator_kind": "deterministic",
+              "model": null,
+              "score": 1.0,
+              "confidence": 1.0,
+              "pass_probability": 1.0,
+              "answers": {},
+              "explanation": "Found 1 citation marker(s); 1 required.",
+              "latency_ms": 0.005799998689326458,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+              },
+              "cost_usd": 0.0,
+              "cost_source": "none",
+              "request_id": null,
+              "error": null,
+              "details": {
+                "citations": [
+                  "[1]"
+                ],
+                "count": 1
+              }
+            }
+          ],
+          "explanation": "Found 1 citation marker(s); 1 required.",
+          "details": {
+            "citations": [
+              "[1]"
+            ],
+            "count": 1
+          },
+          "latency_ms": 0.005799998689326458,
+          "cost_usd": 0.0,
+          "message": null
+        },
+        {
+          "metric": "citation_correctness",
+          "display_name": "Citation Correctness",
+          "category": "rag",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.6,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        },
+        {
+          "metric": "safety",
+          "display_name": "Safety",
+          "category": "general",
+          "status": "skipped",
+          "score": null,
+          "passed": null,
+          "threshold": 0.5,
+          "route": "none",
+          "final_evaluator": null,
+          "escalated": false,
+          "escalation_reason": null,
+          "confidence": null,
+          "escalate_below": null,
+          "judgments": [],
+          "explanation": null,
+          "details": {},
+          "latency_ms": 0.0,
+          "cost_usd": 0.0,
+          "message": "needs semantic judgment but the policy is deterministic-only"
+        }
+      ],
+      "latency_ms": 0.07890000051702373,
+      "cost_usd": 0.0,
+      "escalations": 0,
+      "error": null,
+      "case": {
+        "id": "rag-012",
+        "input": "What happens if I exceed the API rate limit?",
+        "output": "Your account is suspended for 24 hours and you are billed an overage fee [1].",
+        "context": [
+          "The REST API is rate limited to 600 requests per minute per API key. Exceeding the limit returns HTTP 429 with a Retry-After header."
+        ],
+        "expected": {
+          "answer": "You receive HTTP 429 with a Retry-After header.",
+          "tools": null,
+          "tool_calls": null,
+          "max_tool_calls": null,
+          "label": null
+        },
+        "trace": null,
+        "metadata": {
+          "topic": "api",
+          "note": "fabricated consequence"
+        }
+      }
+    }
+  ],
+  "is_demo": false,
+  "tags": [
+    "ci-fixture"
+  ],
+  "notes": "Offline CI fixture: deterministic metrics on the rag_qa sample.",
+  "version": "0.1.0"
+}

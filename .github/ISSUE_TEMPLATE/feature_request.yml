@@ -1,0 +1,57 @@
+name: Feature request
+description: Suggest a new metric, evaluator backend, integration or improvement.
+title: "feat: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. A concrete use case helps us far more than a solution
+        sketch alone.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to evaluate or automate, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        How should it work? For a new metric, describe what it measures, the dataset
+        fields it needs, any deterministic check, and the questions a judge should answer.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you use today, or other approaches you considered.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Metrics
+        - Evaluators / providers
+        - Evaluation policy / cascade
+        - Datasets
+        - Experiments / comparison / regression gate
+        - CLI
+        - Python API
+        - Local API
+        - Dashboard
+        - CI / Docker
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to open a pull request for this.

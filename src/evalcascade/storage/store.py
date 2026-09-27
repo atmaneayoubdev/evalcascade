@@ -9,6 +9,7 @@ Experiment references accepted everywhere (CLI, API, SDK):
 
 from __future__ import annotations
 
+import re
 import shutil
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -37,6 +38,7 @@ from evalcascade.storage.models import (
 )
 
 CaseFilter = Literal["all", "passed", "failed", "escalated"]
+_LATEST_RE = re.compile(r"latest(?:~(\d+))?")
 
 
 class DatasetInfo(BaseModel):
@@ -180,13 +182,9 @@ class ExperimentStore:
         """Resolve an experiment reference to an id (see module docstring)."""
         ref = ref.strip()
         with self._session() as s:
-            if ref.startswith("latest"):
-                offset = 0
-                if "~" in ref:
-                    try:
-                        offset = int(ref.split("~", 1)[1])
-                    except ValueError:
-                        raise NotFoundError(f"invalid reference {ref!r}") from None
+            latest = _LATEST_RE.fullmatch(ref)
+            if latest:
+                offset = int(latest.group(1) or 0)
                 found = s.scalars(
                     select(ExperimentRecord.id)
                     .order_by(ExperimentRecord.created_at.desc())
@@ -445,7 +443,10 @@ def resolve_dataset(ref: str | Path, store: ExperimentStore | None = None) -> Da
 
     text_ref = str(ref)
     if text_ref.startswith("sample:"):
-        return load_sample(text_ref.split(":", 1)[1])
+        try:
+            return load_sample(text_ref.split(":", 1)[1])
+        except ValueError as exc:
+            raise DatasetError(str(exc)) from None
     path = Path(text_ref)
     if path.is_file():
         return Dataset.from_jsonl(path)

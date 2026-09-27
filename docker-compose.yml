@@ -1,0 +1,43 @@
+# EvalCascade local API + dashboard.
+#
+#   cp .env.example .env        # add OPENROUTER_API_KEY (optional for demo/deterministic use)
+#   docker compose up -d --build
+#   open http://127.0.0.1:8000  # dashboard; OpenAPI docs at /docs
+#
+# Secrets are injected from .env at container start; they are never baked into the image.
+# Requires Docker Compose v2.24+ (for `env_file.required`).
+name: evalcascade
+
+services:
+  evalcascade:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: evalcascade:0.1.0
+    ports:
+      # Loopback only. Set EVALCASCADE_API_TOKEN in .env before publishing more widely.
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # These override .env values that only make sense on the host.
+      EVALCASCADE_HOME: /data
+      EVALCASCADE_DASHBOARD_DIR: /app/dashboard
+      EVALCASCADE_DISABLE_DOTENV: "1"
+    volumes:
+      - evalcascade-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; r = urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4); sys.exit(0 if r.status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  evalcascade-data:

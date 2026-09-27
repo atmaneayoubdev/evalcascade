@@ -121,7 +121,7 @@ def result_table(result: EvaluationResult, title: str | None = None) -> Table:
             conf,
             fmt_ms(m.latency_ms),
             fmt_cost(m.cost_usd, m.cost_complete),
-            note[:240],
+            Text(note[:240]),  # Text(): judge output is data, never Rich markup
         )
     return table
 
@@ -219,8 +219,8 @@ def experiments_table(items: list[ExperimentListItem]) -> Table:
         s = e.summary
         table.add_row(
             e.id,
-            e.name,
-            e.dataset_name or "—",
+            Text(e.name),
+            Text(e.dataset_name or "—"),
             e.created_at.strftime("%Y-%m-%d %H:%M"),
             str(s.num_cases),
             fmt_score(s.overall_score),
@@ -242,7 +242,7 @@ def datasets_table(items: list[DatasetInfo]) -> Table:
     table.add_column("Path", overflow="fold")
     for d in items:
         fields = ", ".join(f"{k}:{v}" for k, v in d.fields.items() if v)
-        table.add_row(d.name, str(d.num_cases), fields, d.hash, d.path or "—")
+        table.add_row(Text(d.name), str(d.num_cases), fields, d.hash, Text(d.path or "—"))
     return table
 
 
@@ -331,7 +331,7 @@ def gate_panel(result: GateResult) -> Panel:
         table.add_row(
             c.name,
             Text("ok", style="green") if c.passed else Text("FAIL", style="red bold"),
-            c.message,
+            Text(c.message),
         )
     title = "Regression gate: PASSED" if result.passed else "Regression gate: FAILED"
     return Panel(table, title=title, border_style="green" if result.passed else "red")

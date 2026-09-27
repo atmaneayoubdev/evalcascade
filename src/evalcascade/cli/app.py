@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import errno
 import json
 import os
 import platform
@@ -1041,7 +1042,23 @@ def main() -> None:
         if reconfigure is not None:
             with contextlib.suppress(ValueError, OSError):  # exotic streams
                 reconfigure(encoding="utf-8", errors="replace")
-    app()
+    try:
+        app()
+    except BrokenPipeError:
+        _quiet_exit()
+    except OSError as exc:
+        # Windows reports a reader that closed early (e.g. `| head`) as EINVAL.
+        if exc.errno not in (errno.EPIPE, errno.EINVAL):
+            raise
+        _quiet_exit()
+
+
+def _quiet_exit() -> None:
+    """The consumer stopped reading: exit cleanly instead of printing a traceback."""
+    with contextlib.suppress(OSError):
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+    sys.exit(0)
 
 
 if __name__ == "__main__":  # pragma: no cover

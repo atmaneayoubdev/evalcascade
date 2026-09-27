@@ -108,6 +108,9 @@ First public release.
   file < environment < explicit arguments.
 - **Security measures.**
   - Secrets only from the environment, held as `SecretStr`.
+  - Keys only go to their own endpoint: `OPENROUTER_API_KEY` is sent to `https://openrouter.ai`
+    hosts only, and a custom judge endpoint uses only `EVALCASCADE_JUDGE_API_KEY` (or none,
+    with `EVALCASCADE_JUDGE_REQUIRE_API_KEY=false`).
   - Log and error redaction.
   - No secrets in the database, exports or API responses.
   - Evaluated text is kept separate from judge instructions.

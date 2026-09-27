@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * EvalCascade design tokens.
+ *
+ * Principle: chrome is ink on paper. Saturated color is reserved for two jobs:
+ *   1. the route that produced a judgment (deterministic / Jev / escalated / LLM)
+ *   2. the verdict (good / bad, pass / fail)
+ * Route hues were validated for CVD separation with the dataviz palette checker
+ * (adjacent order det → jev → esc → llm, light + dark surfaces).
+ */
+
+:root {
+  --plane: #f4f5f8;
+  --surface: #ffffff;
+  --sunken: #f7f8fa;
+  --ink: #14161b;
+  --ink-2: #4b5261;
+  --ink-3: #646b7b;
+  --hairline: #e3e6eb;
+  --hairline-strong: #d0d5dd;
+
+  --route-det: #1baf7a;
+  --route-jev: #2a78d6;
+  --route-esc: #eda100;
+  --route-llm: #4a3aa7;
+  --route-none: #a3a9b5;
+  /* text-safe (>= 4.5:1) companions for labels on tinted backgrounds */
+  --route-det-ink: #0a7550;
+  --route-jev-ink: #1d5fb0;
+  --route-esc-ink: #8a5800;
+  --route-llm-ink: #4a3aa7;
+  --route-none-ink: #5b6270;
+
+  --good: #16a34a;
+  --bad: #dc3b3b;
+  --good-ink: #0a7a32;
+  --bad-ink: #c02828;
+  --warn-ink: #8f5d00;
+
+  --background: var(--plane);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: #eceef2;
+  --secondary-foreground: var(--ink);
+  --muted: #eceef2;
+  --muted-foreground: var(--ink-3);
+  --accent: #eceef2;
+  --accent-foreground: var(--ink);
+  --destructive: var(--bad-ink);
+  --border: var(--hairline);
+  --input: var(--hairline-strong);
+  --ring: #2a78d6;
+  --radius: 0.625rem;
+
+  --chart-grid: #e7e9ee;
+  --chart-axis: #c4c9d2;
+}
+
+.dark {
+  --plane: #0d0f13;
+  --surface: #14171d;
+  --sunken: #191d24;
+  --ink: #eceef2;
+  --ink-2: #a9afbb;
+  --ink-3: #858c9a;
+  --hairline: #242933;
+  --hairline-strong: #323845;
+
+  --route-det: #199e70;
+  --route-jev: #3987e5;
+  --route-esc: #c98500;
+  --route-llm: #9085e9;
+  --route-none: #5b6270;
+  --route-det-ink: #43c996;
+  --route-jev-ink: #7eb2f1;
+  --route-esc-ink: #e6ad3c;
+  --route-llm-ink: #b0a8f3;
+  --route-none-ink: #a3a9b5;
+
+  --good: #22b35a;
+  --bad: #e5534b;
+  --good-ink: #4cc775;
+  --bad-ink: #f27a72;
+  --warn-ink: #e6ad3c;
+
+  --primary-foreground: #0d0f13;
+  --secondary: #1e222a;
+  --muted: #1e222a;
+  --accent: #1e222a;
+  --ring: #5a9bea;
+
+  --chart-grid: #222731;
+  --chart-axis: #3a4150;
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-heading: var(--font-sans);
+
+  --color-plane: var(--plane);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-route-det: var(--route-det);
+  --color-route-jev: var(--route-jev);
+  --color-route-esc: var(--route-esc);
+  --color-route-llm: var(--route-llm);
+  --color-route-none: var(--route-none);
+  --color-route-det-ink: var(--route-det-ink);
+  --color-route-jev-ink: var(--route-jev-ink);
+  --color-route-esc-ink: var(--route-esc-ink);
+  --color-route-llm-ink: var(--route-llm-ink);
+  --color-route-none-ink: var(--route-none-ink);
+
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-good-ink: var(--good-ink);
+  --color-bad-ink: var(--bad-ink);
+  --color-warn-ink: var(--warn-ink);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    font-feature-settings: "ss02" 0;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--route-jev) 28%, transparent);
+  }
+}
+
+@layer components {
+  /* Synthetic data wears a hatch: demo badges and banners share it. */
+  .hatch {
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--ink-3) 22%, transparent) 0 1.5px,
+      transparent 1.5px 5px
+    );
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Tables that scroll sideways instead of breaking the layout. */
+  .scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

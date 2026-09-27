@@ -301,6 +301,11 @@ deterministic `check()` and a provider-independent `rubric()` — a *state* plus
 | `ChoiceQuestion` | `choice` | Σ P(option) × option score | Jev's reported `confidence` |
 | `ScoreQuestion` (2–10 levels) | `score` | expected level / max level | Jev's reported `confidence` |
 
+<p align="center">
+  <img src="docs/images/escalation.png" alt="Jev answers with confidence 0.57, below the 0.82 threshold, so the rubric escalates to the LLM judge" width="900">
+  <br><sub>A real escalation: Jev's confidence (0.57) is below <code>escalate_below</code> (0.82), so the same rubric goes to the LLM judge, which explains its verdict. Both judgments are kept.</sub>
+</p>
+
 A multi-question rubric (per passage, per sentence, per tool call) is as confident as its least
 confident answer. The same rubric goes unchanged to the LLM judge, which answers it under a strict
 JSON schema, so both backends are scored identically.

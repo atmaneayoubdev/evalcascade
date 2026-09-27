@@ -43,6 +43,10 @@ require the token, because they expose no data or secrets:
 - `/docs`, `/redoc`, `/openapi.json`
 - the static dashboard files
 
+The dashboard itself works with token-protected servers: paste the token under
+**Settings → API token**. It is kept in that browser's `localStorage` only and sent as the
+`Authorization` header on every request.
+
 `evalcascade serve` warns when you bind to a non-local address without a token. Anyone who
 can reach the port could run evaluations billed to your API keys and read your datasets and
 results.

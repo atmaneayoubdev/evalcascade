@@ -10,6 +10,7 @@ Calibration is measured on the predicted probability that the case *passes* the 
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 from pydantic import BaseModel
@@ -26,6 +27,7 @@ class Classification(BaseModel):
     recall: float | None
     f1: float | None
     balanced_accuracy: float | None
+    accuracy_ci95: tuple[float, float] | None = None  # Wilson score interval
 
 
 class ReliabilityBin(BaseModel):
@@ -45,6 +47,45 @@ class Calibration(BaseModel):
 
 def _ratio(num: float, den: float) -> float | None:
     return num / den if den else None
+
+
+def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
+    """Wilson score interval for a binomial proportion (95% by default)."""
+    if n == 0:
+        return None
+    p = successes / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / denom
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
+class PairedTest(BaseModel):
+    """Exact McNemar test on the cases two modes got right/wrong (paired predictions)."""
+
+    a: str
+    b: str
+    n: int
+    only_a_correct: int
+    only_b_correct: int
+    p_value: float | None
+
+
+def mcnemar(a_correct: Sequence[bool], b_correct: Sequence[bool], *, a: str, b: str) -> PairedTest:
+    """Two-sided exact McNemar test (binomial on the discordant pairs)."""
+    if len(a_correct) != len(b_correct):
+        raise ValueError("paired sequences must have the same length")
+    only_a = sum(1 for x, y in zip(a_correct, b_correct, strict=True) if x and not y)
+    only_b = sum(1 for x, y in zip(a_correct, b_correct, strict=True) if y and not x)
+    discordant = only_a + only_b
+    p_value: float | None = None
+    if discordant:
+        k = min(only_a, only_b)
+        tail = sum(math.comb(discordant, i) for i in range(k + 1)) / 2**discordant
+        p_value = min(1.0, 2 * tail)
+    return PairedTest(
+        a=a, b=b, n=len(a_correct), only_a_correct=only_a, only_b_correct=only_b, p_value=p_value
+    )
 
 
 def classification(labels: Sequence[bool], predictions: Sequence[bool]) -> Classification:
@@ -76,6 +117,7 @@ def classification(labels: Sequence[bool], predictions: Sequence[bool]) -> Class
         recall=recall,
         f1=f1,
         balanced_accuracy=balanced,
+        accuracy_ci95=wilson_interval(tp + tn, n),
     )
 
 

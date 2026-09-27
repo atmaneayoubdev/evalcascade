@@ -1,11 +1,16 @@
 """Run the Jev-only / LLM-judge-only / adaptive-cascade benchmark on a labeled dataset.
 
     uv run python benchmarks/run_benchmark.py \\
-        --dataset benchmarks/data/halueval_groundedness.jsonl --metric groundedness
+        --dataset benchmarks/data/halueval_groundedness.jsonl --metric groundedness \\
+        --param max_passage_chars=8000
 
 Requires OPENROUTER_API_KEY (Jev) and a judge configuration (OpenRouter by default, or any
 OpenAI-compatible endpoint via EVALCASCADE_JUDGE_BASE_URL / _API_KEY / _MODEL). Results are
 written to benchmarks/results/<date>-<name>.json and .md.
+
+    uv run python benchmarks/run_benchmark.py --rescore benchmarks/results/<file>.json
+
+recomputes every statistic from a saved run's per-item results (no API calls).
 """
 
 from __future__ import annotations
@@ -17,11 +22,21 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from evalcascade.benchmarking import MODES, run_benchmark, to_markdown
+from evalcascade.benchmarking import MODES, BenchmarkReport, rescore, run_benchmark, to_markdown
 from evalcascade.config import Settings
 from evalcascade.datasets import Dataset
 
 HERE = Path(__file__).resolve().parent
+
+
+def save(report: BenchmarkReport, base: Path) -> str:
+    # Append suffixes (Path.with_suffix would treat "cascade-0.6" as having suffix ".6").
+    base.parent.mkdir(parents=True, exist_ok=True)
+    json_path = base.parent / f"{base.name}.json"
+    json_path.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    markdown = to_markdown(report)
+    (base.parent / f"{base.name}.md").write_text(markdown, encoding="utf-8")
+    return markdown
 
 
 def main() -> int:
@@ -32,7 +47,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--dataset", type=Path, required=True)
+    parser.add_argument("--dataset", type=Path)
+    parser.add_argument("--rescore", type=Path, help="recompute statistics of a saved report")
     parser.add_argument("--metric", default="groundedness")
     parser.add_argument(
         "--param", action="append", default=[], help="metric parameter key=value (JSON value)"
@@ -45,6 +61,14 @@ def main() -> int:
     parser.add_argument("--note", action="append", default=[], help="note added to the report")
     parser.add_argument("--out-dir", type=Path, default=HERE / "results")
     args = parser.parse_args()
+
+    if args.rescore:
+        saved = BenchmarkReport.model_validate_json(args.rescore.read_text(encoding="utf-8"))
+        stem = args.rescore.name.removesuffix(".json")
+        print(save(rescore(saved), args.rescore.parent / stem))
+        return 0
+    if args.dataset is None:
+        parser.error("--dataset is required (or use --rescore)")
 
     params = {}
     for item in args.param:
@@ -82,11 +106,7 @@ def main() -> int:
     report.notes.extend(args.note)
     stamp = datetime.now(UTC).strftime("%Y-%m-%d")
     base = args.out_dir / f"{stamp}-{report.name}"
-    base.parent.mkdir(parents=True, exist_ok=True)
-    base.with_suffix(".json").write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
-    markdown = to_markdown(report)
-    base.with_suffix(".md").write_text(markdown, encoding="utf-8")
-    print(markdown)
+    print(save(report, base))
     print(f"\nsaved {base}.json and {base}.md", file=sys.stderr)
     return 0
 

@@ -3,8 +3,11 @@
 from evalcascade.benchmarking.metrics import (
     Calibration,
     Classification,
+    PairedTest,
     calibration,
     classification,
+    mcnemar,
+    wilson_interval,
 )
 from evalcascade.benchmarking.runner import (
     MODES,
@@ -12,6 +15,8 @@ from evalcascade.benchmarking.runner import (
     ItemResult,
     ModeReport,
     SweepPoint,
+    paired_tests,
+    rescore,
     run_benchmark,
     score_mode,
     sweep,
@@ -25,11 +30,16 @@ __all__ = [
     "Classification",
     "ItemResult",
     "ModeReport",
+    "PairedTest",
     "SweepPoint",
     "calibration",
     "classification",
+    "mcnemar",
+    "paired_tests",
+    "rescore",
     "run_benchmark",
     "score_mode",
     "sweep",
     "to_markdown",
+    "wilson_interval",
 ]

@@ -24,8 +24,10 @@ from evalcascade._version import __version__
 from evalcascade.benchmarking.metrics import (
     Calibration,
     Classification,
+    PairedTest,
     calibration,
     classification,
+    mcnemar,
 )
 from evalcascade.config import Settings
 from evalcascade.core.evaluator import Evaluator
@@ -96,7 +98,33 @@ class BenchmarkReport(BaseModel):
     evaluators: dict[str, dict[str, Any]]
     modes: dict[str, ModeReport]
     sweep: list[SweepPoint] = Field(default_factory=list)
+    paired_tests: list[PairedTest] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+
+
+def paired_tests(modes: dict[str, ModeReport]) -> list[PairedTest]:
+    """McNemar tests for every pair of modes, on cases both modes judged."""
+    names = list(modes)
+    tests = []
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            by_id = {item.id: item for item in modes[b].items}
+            pairs = [
+                (x.predicted == x.label, by_id[x.id].predicted == x.label)
+                for x in modes[a].items
+                if x.predicted is not None and x.id in by_id and by_id[x.id].predicted is not None
+            ]
+            tests.append(mcnemar([p[0] for p in pairs], [p[1] for p in pairs], a=a, b=b))
+    return tests
+
+
+def rescore(report: BenchmarkReport) -> BenchmarkReport:
+    """Recompute every statistic from the recorded per-item results (no API calls)."""
+    modes = {name: score_mode(r.mode, r.items) for name, r in report.modes.items()}
+    points = sweep(modes["jev"].items, modes["llm"].items) if {"jev", "llm"} <= set(modes) else []
+    return report.model_copy(
+        update={"modes": modes, "sweep": points, "paired_tests": paired_tests(modes)}
+    )
 
 
 def labels_of(dataset: Dataset) -> dict[str, bool]:
@@ -270,6 +298,7 @@ async def run_benchmark(
         evaluators={k: v for k, v in described.items() if k != "deterministic"},
         modes=reports,
         sweep=points,
+        paired_tests=paired_tests(reports),
     )
 
 
@@ -300,9 +329,20 @@ def _row(cells: Sequence[object]) -> str:
 
 
 SUMMARY_HEADER = (
-    "Mode", "n", "Errors", "Accuracy", "Precision", "Recall", "F1", "Brier ↓", "ECE ↓",
+    "Mode", "n", "Errors", "Accuracy (95% CI)", "Precision", "Recall", "F1", "Brier ↓", "ECE ↓",
     "p50 latency", "p95 latency", "Total cost", "Cost / item", "Escalated",
 )  # fmt: skip
+
+
+def _acc(c: Classification) -> str:
+    if c.accuracy is None:
+        return "—"
+    if c.accuracy_ci95 is None:
+        return _f(c.accuracy)
+    lo, hi = c.accuracy_ci95
+    return f"{c.accuracy:.3f} ({lo:.2f}-{hi:.2f})"
+
+
 SWEEP_HEADER = (
     "escalate_below", "Escalated", "Accuracy", "F1", "Total cost", "p50 latency", "p95 latency",
 )  # fmt: skip
@@ -339,7 +379,7 @@ def to_markdown(report: BenchmarkReport) -> str:
                     MODE_LABEL.get(mode, mode),
                     r.n,
                     r.errors,
-                    _f(c.accuracy),
+                    _acc(c),
                     _f(c.precision),
                     _f(c.recall),
                     _f(c.f1),
@@ -353,6 +393,18 @@ def to_markdown(report: BenchmarkReport) -> str:
                 ]
             )
         )
+    if report.paired_tests:
+        lines += [
+            "",
+            "## Paired significance (exact McNemar test on per-case correctness)",
+            "",
+            _row(("Comparison", "Cases", "Only A correct", "Only B correct", "p-value")),
+            _row(["---"] * 5),
+        ]
+        for t in report.paired_tests:
+            label = f"{MODE_LABEL.get(t.a, t.a)} (A) vs {MODE_LABEL.get(t.b, t.b)} (B)"
+            p_text = "—" if t.p_value is None else f"{t.p_value:.3f}"
+            lines.append(_row((label, t.n, t.only_a_correct, t.only_b_correct, p_text)))
     if report.sweep:
         lines += ["", "## Escalation-threshold sweep (counterfactual)", "", SWEEP_NOTE, ""]
         lines += [_row(SWEEP_HEADER), _row(["---"] * len(SWEEP_HEADER))]

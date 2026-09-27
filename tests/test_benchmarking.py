@@ -148,3 +148,34 @@ async def test_run_benchmark_requires_labels(settings: Settings) -> None:
     ds = Dataset.from_records([{"id": "x", "output": "a", "context": ["c"]}], name="nolabel")
     with pytest.raises(DatasetError, match=r"expected\.label"):
         await run_benchmark(ds, metric="groundedness", settings=settings)
+
+
+def test_wilson_interval_and_mcnemar() -> None:
+    from evalcascade.benchmarking import mcnemar, wilson_interval
+
+    lo, hi = wilson_interval(120, 150)  # type: ignore[misc]
+    assert lo == pytest.approx(0.729, abs=1e-3) and hi == pytest.approx(0.856, abs=1e-3)
+    assert wilson_interval(0, 0) is None
+    same = mcnemar([True, False], [True, False], a="x", b="y")
+    assert same.p_value is None and same.only_a_correct == 0
+    t = mcnemar([True] * 6 + [False] * 4, [False] * 6 + [True] * 4, a="x", b="y")
+    assert (t.only_a_correct, t.only_b_correct) == (6, 4)
+    assert t.p_value == pytest.approx(0.7539, abs=1e-4)
+    lopsided = mcnemar([True] * 10, [False] * 10, a="x", b="y")
+    assert lopsided.p_value == pytest.approx(2 / 1024)
+
+
+async def test_rescore_reproduces_statistics(settings: Settings) -> None:
+    from evalcascade.benchmarking import rescore
+
+    evaluators = {
+        "jev": ScriptedEvaluator("jev", level=3, confidence=0.9),
+        "llm": ScriptedEvaluator("llm", route_label="llm", level=0),
+    }
+    report = await run_benchmark(
+        labeled(), metric="groundedness", settings=settings, evaluators=evaluators
+    )
+    again = rescore(report)
+    assert again.modes["jev"].classification == report.modes["jev"].classification
+    assert again.sweep == report.sweep and len(again.paired_tests) == 3
+    assert "Paired significance" in to_markdown(again)

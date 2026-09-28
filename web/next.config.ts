@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
-  // Don't let `next dev` write AGENTS.md / CLAUDE.md into the project.
+  // Don't let `next dev` generate coding-agent instruction files in the project.
   agentRules: false,
   turbopack: {
     // Without the mock flag, swap the demo fixtures for a stub so they are not
